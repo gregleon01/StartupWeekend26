@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-primary: #0A0A0F;
+  --color-bg-secondary: #12121A;
+  --color-bg-tertiary: #1A1A25;
+  --color-text-primary: #F0F0F2;
+  --color-text-secondary: #8888A0;
+  --color-text-tertiary: #55556A;
+  --color-accent-amber: #F5A623;
+  --color-accent-amber-dim: #F5A62333;
+  --color-frost-blue: #4FC3F7;
+  --color-frost-blue-deep: #0288D1;
+  --color-frost-blue-glow: #4FC3F744;
+  --color-danger-red: #EF5350;
+  --color-danger-red-glow: #EF535033;
+  --color-success-green: #66BB6A;
+  --color-border-subtle: #ffffff0A;
+  --color-whatsapp-green: #25D366;
+
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
+}
+
+html, body {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  height: 100%;
+}
+
+#__next {
+  height: 100%;
+}
+
+/* Mapbox overrides */
+.mapboxgl-ctrl-attrib {
+  font-size: 10px !important;
+  opacity: 0.5;
+}
+.mapboxgl-ctrl-logo {
+  opacity: 0.5 !important;
+}
+
+/* Marker pulse */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* Threshold breach glow */
+@keyframes threshold-pulse {
+  0%, 100% { box-shadow: 0 0 10px var(--color-danger-red); }
+  50% { box-shadow: 0 0 30px var(--color-danger-red), 0 0 60px var(--color-danger-red-glow); }
+}
+
+/* Screen edge vignette flash */
+@keyframes vignette-flash {
+  0% { opacity: 0; }
+  30% { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+/* Subtle shimmer for loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.loading-shimmer {
+  background: linear-gradient(90deg, transparent 0%, #ffffff08 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ffffff15; border-radius: 2px; }
