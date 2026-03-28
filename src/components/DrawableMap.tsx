@@ -290,40 +290,20 @@ export default function DrawableMap({
         )}
       </AnimatePresence>
 
-      {/* Drawing instructions */}
+      {/* Drawing point counter — shown while actively drawing */}
       <AnimatePresence>
-        {drawingEnabled && !isDrawing && (
-          <motion.div
-            className="absolute top-8 left-1/2 -translate-x-1/2 z-10 text-center"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <div className="px-4 py-2.5 bg-bg-secondary/90 backdrop-blur-md border border-border-subtle rounded-xl">
-              <p className="text-text-primary text-sm font-medium">
-                {locale === "bg" ? "Начертайте границите на полето" : "Draw your field boundary"}
-              </p>
-              <p className="text-text-secondary text-xs mt-0.5">
-                {locale === "bg" ? "Натиснете за да очертаете полето си" : "Click on the map to start"}
-              </p>
-            </div>
-          </motion.div>
-        )}
         {isDrawing && (
           <motion.div
-            className="absolute top-8 left-1/2 -translate-x-1/2 z-10"
-            initial={{ opacity: 0, y: -20 }}
+            className="absolute top-16 left-1/2 -translate-x-1/2 z-10"
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            exit={{ opacity: 0 }}
           >
-            <div className="px-4 py-2.5 bg-bg-secondary/90 backdrop-blur-md border border-accent-amber/30 rounded-xl">
+            <div className="px-3 py-1.5 bg-black/50 backdrop-blur-md border border-accent-amber/30 rounded-full">
               <p className="text-accent-amber text-xs font-medium">
-                {drawPoints.length} {locale === "bg" ? "точки" : "points"} · {drawPoints.length >= 3
-                  ? (locale === "bg" ? "Натисни първата точка или двоен клик за затваряне" : "Click first point or double-click to close")
-                  : (locale === "bg" ? "Продължи да добавяш точки" : "Keep clicking to add points")}
-              </p>
-              <p className="text-text-tertiary text-[10px] mt-0.5">
-                {locale === "bg" ? "Esc за отмяна на последната точка" : "Esc to undo last point"}
+                {drawPoints.length} {locale === "bg" ? "точки" : "pts"} · {drawPoints.length >= 3
+                  ? (locale === "bg" ? "двоен клик за затваряне" : "double-click to close")
+                  : (locale === "bg" ? "продължи да кликаш" : "keep clicking")}
               </p>
             </div>
           </motion.div>

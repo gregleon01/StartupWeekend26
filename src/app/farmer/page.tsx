@@ -131,32 +131,56 @@ export default function FarmerPage() {
         dimmed={mapDimmed}
       />
 
-      {/* Top bar */}
-      <div className="absolute top-4 left-4 z-40 flex items-center gap-2">
+      {/* Unified top bar pill */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center
+                      bg-black/40 backdrop-blur-md border border-white/15 rounded-full
+                      overflow-hidden shadow-lg">
+        {/* ← Aklima */}
         <Link
           href="/"
-          className="px-3 py-1.5 bg-bg-secondary/80 backdrop-blur-md border border-border-subtle
-                     rounded-lg text-text-secondary text-xs hover:text-text-primary transition-all"
+          className="flex items-center gap-1.5 px-4 py-2 text-white/70 text-xs hover:text-white
+                     hover:bg-white/10 transition-all whitespace-nowrap"
         >
-          ← Aklima
+          <ArrowLeft className="w-3 h-3" />
+          Aklima
         </Link>
-        {showBack && (
-          <motion.button
-            onClick={handleBack}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-secondary border border-border-subtle
-                       rounded-lg text-text-secondary text-xs hover:text-text-primary transition-all cursor-pointer"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-          >
-            <ArrowLeft className="w-3 h-3" />
-            {locale === "bg" ? "Назад" : "Back"}
-          </motion.button>
-        )}
-      </div>
 
-      {/* Language toggle */}
-      <div className="absolute top-4 right-4 z-50">
-        <LanguageToggle />
+        {/* Divider */}
+        <div className="w-px h-4 bg-white/15" />
+
+        {/* Context label */}
+        <div className="px-4 py-2 text-xs text-white/80 whitespace-nowrap">
+          {state === "DRAWING" && (locale === "bg" ? "Начертайте полето" : "Draw your field boundary")}
+          {state === "ASSIGN_CROP" && (locale === "bg" ? "Изберете култура" : "Select crop")}
+          {state === "PARCELS" && (locale === "bg" ? "Вашите полета" : "Your fields")}
+          {state === "HISTORY" && (locale === "bg" ? "Исторически анализ" : "Frost history")}
+          {state === "COVERAGE" && (locale === "bg" ? "Покритие" : "Coverage")}
+          {state === "SIMULATION" && (locale === "bg" ? "Симулация" : "Simulation")}
+        </div>
+
+        {/* Back button — shown on inner steps */}
+        {showBack && (
+          <>
+            <div className="w-px h-4 bg-white/15" />
+            <motion.button
+              onClick={handleBack}
+              className="px-4 py-2 text-white/60 text-xs hover:text-white hover:bg-white/10
+                         transition-all cursor-pointer whitespace-nowrap"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              ← {locale === "bg" ? "Назад" : "Back"}
+            </motion.button>
+          </>
+        )}
+
+        {/* Divider */}
+        <div className="w-px h-4 bg-white/15" />
+
+        {/* Language toggle inline */}
+        <div className="px-3 py-1.5">
+          <LanguageToggle />
+        </div>
       </div>
 
       {/* Field info bar when viewing analysis */}
