@@ -168,8 +168,8 @@ export default function WeatherOverlay({
           <div className="flex items-center gap-1">
             <motion.button
               onClick={() => setOpen((o) => !o)}
-              className="flex items-center gap-2 px-3 py-2 bg-bg-secondary/90 backdrop-blur border border-border-subtle rounded-lg
-                         text-white/70 hover:text-white transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-3 py-2 bg-white/8 backdrop-blur-xl border border-white/12 rounded-full
+                         text-white/60 hover:text-white hover:bg-white/14 transition-all cursor-pointer shadow-xl"
               whileTap={{ scale: 0.95 }}
             >
               {modeIcon[mode]}
@@ -192,11 +192,11 @@ export default function WeatherOverlay({
                           setMode(m);
                           setOpen(false);
                         }}
-                        className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all cursor-pointer shadow-xl
                         ${
                           mode === m
-                            ? "bg-accent-amber/20 text-accent-amber border border-accent-amber/30"
-                            : "bg-bg-secondary/90 backdrop-blur border border-border-subtle text-white/70 hover:text-white"
+                            ? "bg-white text-black"
+                            : "bg-white/8 backdrop-blur-xl border border-white/12 text-white/60 hover:text-white hover:bg-white/14"
                         }`}
                       >
                         {modeIcon[m]}
@@ -212,11 +212,11 @@ export default function WeatherOverlay({
           {/* Radar timestamp indicator */}
           {mode === "radar" && radarFrames.length > 0 && (
             <motion.div
-              className="mt-2 px-3 py-1.5 bg-bg-secondary/90 backdrop-blur border border-border-subtle rounded-lg inline-block"
+              className="mt-2 px-3 py-1.5 bg-white/8 backdrop-blur-xl border border-white/12 rounded-full inline-block shadow-xl"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <p className="text-white/50 text-[10px] uppercase tracking-wider">
+              <p className="text-white/40 text-[10px] uppercase tracking-wider">
                 Precipitation radar
               </p>
               <p className="text-white/70 text-xs font-mono">
