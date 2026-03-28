@@ -172,7 +172,6 @@ export default function FarmerPage() {
           transition={{ duration: 0.2 }}
         >
           <p className="text-white text-sm font-medium tracking-wide">
-            {state === "ONBOARDING" && (locale === "bg" ? "Добре дошли" : "Welcome")}
             {state === "DRAWING" && (locale === "bg" ? "Начертайте полето" : "Draw your field boundary")}
             {state === "ASSIGN_CROP" && (locale === "bg" ? "Изберете култура" : "Select crop")}
             {state === "PARCELS" && (locale === "bg" ? "Вашите полета" : "Your fields")}
