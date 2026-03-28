@@ -119,7 +119,7 @@ export default function FarmerPage() {
     }
   }, [state, parcels.length]);
 
-  const drawingEnabled = state === "DRAWING" || state === "PARCELS";
+  const drawingEnabled = state === "DRAWING";
   const showBack = state === "ASSIGN_CROP" || state === "HISTORY" || state === "COVERAGE";
   const mapDimmed = state === "ASSIGN_CROP" || state === "COVERAGE";
 

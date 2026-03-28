@@ -290,7 +290,7 @@ export default function DrawableMap({
 
       {/* Drawing instructions */}
       <AnimatePresence>
-        {drawingEnabled && !isDrawing && parcels.length === 0 && (
+        {drawingEnabled && !isDrawing && (
           <motion.div
             className="absolute top-8 left-1/2 -translate-x-1/2 z-10 text-center"
             initial={{ opacity: 0, y: -20 }}
