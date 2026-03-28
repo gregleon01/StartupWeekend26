@@ -79,8 +79,8 @@ function generateFallbackEvents(contract: ParametricContract): FrostEvent[] {
       year: y,
       date: `${y}-04-${String(day).padStart(2, "0")}T02:00`,
       minTemp: isTrigger
-        ? contract.temperatureThreshold - 0.5 - Math.random() * 2.5
-        : contract.temperatureThreshold + 1 + Math.random() * 4,
+        ? contract.threshold - 0.5 - Math.random() * 2.5
+        : contract.threshold + 1 + Math.random() * 4,
       durationHours: isTrigger
         ? contract.durationThreshold + Math.floor(Math.random() * 4)
         : Math.floor(Math.random() * (contract.durationThreshold - 1)),
