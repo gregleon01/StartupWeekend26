@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.mapbox.com https://tile.openweathermap.org https://tilecache.rainviewer.com https://*.rainviewer.com",
-              "connect-src 'self' https://*.mapbox.com https://api.mapbox.com https://archive-api.open-meteo.com https://api.open-meteo.com https://api.rainviewer.com https://tile.openweathermap.org https://tilecache.rainviewer.com https://*.rainviewer.com",
+              "connect-src 'self' https://*.mapbox.com https://api.mapbox.com https://events.mapbox.com https://archive-api.open-meteo.com https://api.open-meteo.com https://api.rainviewer.com https://tile.openweathermap.org https://tilecache.rainviewer.com https://*.rainviewer.com",
               "worker-src 'self' blob:",
             ].join("; "),
           },
