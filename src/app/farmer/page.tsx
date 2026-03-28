@@ -218,8 +218,8 @@ export default function FarmerPage() {
       <AnimatePresence>
         {weatherOpen && (
           <motion.div
-            className="absolute top-24 left-1/2 -translate-x-1/2 z-40 w-44
-                       bg-black/40 backdrop-blur-md border border-white/15 rounded-2xl
+            className="absolute top-[106px] left-1/2 -translate-x-1/2 z-40 w-44
+                       bg-white/8 backdrop-blur-xl border border-white/12 rounded-2xl
                        overflow-hidden shadow-xl"
             initial={{ opacity: 0, y: -6, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
