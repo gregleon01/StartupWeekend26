@@ -211,29 +211,35 @@ export default function AdminPage() {
               <BarChart3 className="w-3 h-3" />
               Monthly Triggers
             </p>
-            <div className="flex items-end gap-1 h-[calc(100%-60px)]">
+            <svg width="100%" height="180" viewBox="0 0 240 180" preserveAspectRatio="xMidYMid meet">
               {monthCounts.map((count, i) => {
-                const pct = (count / maxMonth) * 100;
+                const barW = 16;
+                const gap = 4;
+                const chartH = 150;
+                const x = i * (barW + gap);
+                const pct = count / maxMonth;
+                const h = pct * chartH;
                 const active = count > 0;
                 return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <div className="w-full relative" style={{ height: "100%" }}>
-                      <div className="absolute inset-x-0 bottom-0 bg-white/4 rounded-sm" style={{ height: "100%" }} />
-                      <motion.div
-                        className="absolute inset-x-0 bottom-0 rounded-sm"
-                        style={{ backgroundColor: active ? "#F5A623" : "transparent" }}
-                        initial={{ height: 0 }}
-                        animate={{ height: `${pct}%` }}
-                        transition={{ delay: 0.2 + i * 0.04, duration: 0.6, ease: "easeOut" }}
-                      />
-                    </div>
-                    <span className={`text-[8px] font-mono ${active ? "text-white/60" : "text-white/20"}`}>
+                  <g key={i}>
+                    <rect x={x} y={0} width={barW} height={chartH} rx={3} fill="rgba(255,255,255,0.04)" />
+                    <motion.rect
+                      x={x} width={barW} rx={3}
+                      fill={active ? "#F5A623" : "rgba(255,255,255,0.04)"}
+                      opacity={active ? 0.85 : 0.3}
+                      initial={{ height: 0, y: chartH }}
+                      animate={{ height: h, y: chartH - h }}
+                      transition={{ delay: 0.2 + i * 0.04, duration: 0.6, ease: "easeOut" }}
+                    />
+                    <text x={x + barW / 2} y={chartH + 14} textAnchor="middle"
+                      fill={active ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.2)"}
+                      fontSize="9" fontFamily="monospace">
                       {MONTHS[i]}
-                    </span>
-                  </div>
+                    </text>
+                  </g>
                 );
               })}
-            </div>
+            </svg>
           </div>
 
           {/* Column 3: Portfolio Risk */}
