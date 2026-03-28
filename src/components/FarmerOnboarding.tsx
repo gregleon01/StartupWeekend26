@@ -36,7 +36,7 @@ export default function FarmerOnboarding({
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
       <motion.div
-        className="relative w-full max-w-[420px] bg-bg-secondary/85 backdrop-blur-2xl border border-border-subtle rounded-2xl p-7 shadow-2xl"
+        className="relative w-full max-w-[420px] bg-white/8 backdrop-blur-2xl border border-white/12 rounded-2xl p-7 shadow-2xl"
         initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }}
@@ -62,10 +62,10 @@ export default function FarmerOnboarding({
               {locale === "bg" ? "Вашето име" : "Your name"}
             </label>
             <div
-              className={`flex items-center gap-3 px-4 py-3 bg-bg-tertiary/50 rounded-xl border transition-colors ${
+              className={`flex items-center gap-3 px-4 py-3 bg-white/5 rounded-xl border transition-colors ${
                 focused === "name"
                   ? "border-accent-amber/50"
-                  : "border-border-subtle"
+                  : "border-white/10"
               }`}
             >
               <User className="w-4 h-4 text-text-tertiary flex-shrink-0" />
@@ -90,10 +90,10 @@ export default function FarmerOnboarding({
               </span>
             </label>
             <div
-              className={`flex items-center gap-3 px-4 py-3 bg-bg-tertiary/50 rounded-xl border transition-colors ${
+              className={`flex items-center gap-3 px-4 py-3 bg-white/5 rounded-xl border transition-colors ${
                 focused === "address"
                   ? "border-accent-amber/50"
-                  : "border-border-subtle"
+                  : "border-white/10"
               }`}
             >
               <MapPin className="w-4 h-4 text-text-tertiary flex-shrink-0" />
@@ -125,7 +125,7 @@ export default function FarmerOnboarding({
                      transition-all cursor-pointer ${
                        canContinue
                          ? "bg-accent-amber text-bg-primary hover:brightness-110"
-                         : "bg-bg-tertiary text-text-tertiary cursor-not-allowed"
+                         : "bg-white/6 text-text-tertiary cursor-not-allowed"
                      }`}
           whileTap={canContinue ? { scale: 0.98 } : undefined}
         >

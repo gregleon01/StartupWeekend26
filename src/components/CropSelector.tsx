@@ -30,7 +30,7 @@ export default function CropSelector({ onSelect }: CropSelectorProps) {
       exit={{ y: "100%" }}
       transition={{ type: "spring", damping: 30, stiffness: 300 }}
     >
-      <div className="bg-bg-secondary/95 backdrop-blur-xl border-t border-border-subtle rounded-t-3xl px-6 pt-6 pb-10">
+      <div className="bg-white/8 backdrop-blur-xl border-t border-white/12 rounded-t-3xl px-6 pt-6 pb-10">
         <div className="w-10 h-1 bg-text-tertiary/40 rounded-full mx-auto mb-5" />
 
         <p className="text-text-primary text-lg font-medium text-center">
@@ -53,8 +53,8 @@ export default function CropSelector({ onSelect }: CropSelectorProps) {
                   relative p-5 rounded-xl text-center transition-all duration-200 cursor-pointer
                   ${
                     isSelected
-                      ? "bg-bg-tertiary ring-1 ring-accent-amber scale-[1.02]"
-                      : "bg-bg-tertiary/60 hover:ring-1 hover:ring-accent-amber/40"
+                      ? "bg-white/12 ring-1 ring-accent-amber scale-[1.02]"
+                      : "bg-white/6 border border-white/8 hover:ring-1 hover:ring-accent-amber/40"
                   }
                 `}
               >

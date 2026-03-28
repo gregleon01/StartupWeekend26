@@ -34,7 +34,7 @@ export default function ParcelCropSheet({ hectares, onSelect }: ParcelCropSheetP
       exit={{ y: "100%" }}
       transition={{ type: "spring", damping: 30, stiffness: 300 }}
     >
-      <div className="bg-bg-secondary/95 backdrop-blur-xl border-t border-border-subtle rounded-t-3xl px-6 pt-5 pb-8">
+      <div className="bg-white/8 backdrop-blur-xl border-t border-white/12 rounded-t-3xl px-6 pt-5 pb-8">
         <div className="w-10 h-1 bg-text-tertiary/40 rounded-full mx-auto mb-4" />
 
         <div className="text-center mb-5">
@@ -60,7 +60,7 @@ export default function ParcelCropSheet({ hectares, onSelect }: ParcelCropSheetP
                 onMouseEnter={() => setHoveredCrop(key)}
                 onMouseLeave={() => setHoveredCrop(null)}
                 whileTap={{ scale: 0.97 }}
-                className="p-4 rounded-xl text-left bg-bg-tertiary/60
+                className="p-4 rounded-xl text-left bg-white/6 border border-white/8
                           hover:ring-1 hover:ring-accent-amber/40 transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-2 mb-2">

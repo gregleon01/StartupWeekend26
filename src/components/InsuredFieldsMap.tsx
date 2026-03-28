@@ -148,12 +148,12 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
       </Map>
 
       {/* Color mode toggle */}
-      <div className="absolute top-4 right-4 z-50 flex gap-1 bg-bg-tertiary/90 backdrop-blur rounded-lg p-1 text-xs pointer-events-auto">
+      <div className="absolute top-4 right-4 z-50 flex gap-1 bg-white/8 backdrop-blur-xl border border-white/12 rounded-lg p-1 text-xs pointer-events-auto">
         <button
           onClick={() => setColorMode("risk")}
           className={`px-3 py-1.5 rounded transition-colors ${
             colorMode === "risk"
-              ? "bg-bg-primary text-text-primary"
+              ? "bg-white/15 text-white"
               : "text-text-tertiary hover:text-text-secondary"
           }`}
         >
@@ -163,7 +163,7 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
           onClick={() => setColorMode("zone")}
           className={`px-3 py-1.5 rounded transition-colors ${
             colorMode === "zone"
-              ? "bg-bg-primary text-text-primary"
+              ? "bg-white/15 text-white"
               : "text-text-tertiary hover:text-text-secondary"
           }`}
         >
@@ -174,7 +174,7 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="absolute z-50 pointer-events-none bg-bg-tertiary/95 backdrop-blur border border-border-subtle rounded-lg px-3 py-2 text-xs shadow-xl"
+          className="absolute z-50 pointer-events-none bg-white/10 backdrop-blur-xl border border-white/15 rounded-lg px-3 py-2 text-xs shadow-xl"
           style={{
             left: tooltip.x + 12,
             top: tooltip.y - 10,

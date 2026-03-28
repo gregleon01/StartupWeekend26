@@ -63,7 +63,7 @@ export default function PayoutNotification({
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="w-full max-w-[400px] bg-bg-secondary border border-border-subtle rounded-2xl p-6 shadow-2xl border-l-[3px] border-l-success-green"
+        className="w-full max-w-[400px] bg-white/8 backdrop-blur-xl border border-white/12 rounded-2xl p-6 shadow-2xl border-l-[3px] border-l-success-green"
         initial={{ y: 60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
@@ -81,7 +81,7 @@ export default function PayoutNotification({
           <p className="text-text-primary font-medium">
             Frost event confirmed
           </p>
-          <span className="ml-auto text-[10px] font-mono text-text-tertiary border border-border-subtle px-1.5 py-0.5 rounded">
+          <span className="ml-auto text-[10px] font-mono text-text-tertiary border border-white/15 px-1.5 py-0.5 rounded">
             DEMO
           </span>
         </motion.div>

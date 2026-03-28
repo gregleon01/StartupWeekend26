@@ -171,7 +171,7 @@ export default function HistoricalTimeline({
   if (loading) {
     return (
       <motion.div
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-[340px] bg-bg-secondary/75 backdrop-blur-2xl border border-border-subtle rounded-2xl p-5"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-[340px] bg-white/8 backdrop-blur-2xl border border-white/12 rounded-2xl p-5"
         initial={{ opacity: 0, x: 40 }}
         animate={{ opacity: 1, x: 0 }}
       >
@@ -191,10 +191,10 @@ export default function HistoricalTimeline({
       exit={{ opacity: 0, x: 40 }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
     >
-      <div className="bg-bg-secondary/75 backdrop-blur-2xl border border-border-subtle rounded-2xl overflow-hidden shadow-2xl">
+      <div className="bg-white/8 backdrop-blur-2xl border border-white/12 rounded-2xl overflow-hidden shadow-2xl">
 
         {/* Header */}
-        <div className="px-5 pt-5 pb-3 border-b border-border-subtle">
+        <div className="px-5 pt-5 pb-3 border-b border-white/10">
           <p className="text-text-tertiary text-[10px] uppercase tracking-widest mb-2">
             10-year frost history
           </p>
@@ -238,7 +238,7 @@ export default function HistoricalTimeline({
           <AnimatePresence>
             {hoveredEvent && (
               <motion.div
-                className="absolute left-1/2 -translate-x-1/2 top-3 bg-bg-primary border border-border-subtle rounded-lg px-3 py-2 text-xs shadow-xl pointer-events-none whitespace-nowrap z-10"
+                className="absolute left-1/2 -translate-x-1/2 top-3 bg-white/10 backdrop-blur-xl border border-white/15 rounded-lg px-3 py-2 text-xs shadow-xl pointer-events-none whitespace-nowrap z-10"
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}

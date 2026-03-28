@@ -48,7 +48,7 @@ export default function FieldInfoBar({ pin, enrichment }: FieldInfoBarProps) {
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.3, type: "spring", damping: 22, stiffness: 180 }}
     >
-      <div className="flex items-center gap-6 px-5 py-3 bg-bg-secondary/70 backdrop-blur-xl border border-border-subtle rounded-2xl shadow-lg">
+      <div className="flex items-center gap-6 px-5 py-3 bg-white/8 backdrop-blur-xl border border-white/12 rounded-2xl shadow-lg">
         {stats.map((s, i) => (
           <div key={s.label} className="flex items-center gap-6">
             <div className="flex flex-col items-center gap-0.5">
@@ -60,7 +60,7 @@ export default function FieldInfoBar({ pin, enrichment }: FieldInfoBarProps) {
               </span>
             </div>
             {i < stats.length - 1 && (
-              <div className="w-px h-6 bg-border-subtle" />
+              <div className="w-px h-6 bg-white/10" />
             )}
           </div>
         ))}

@@ -33,14 +33,14 @@ export default function ParcelSidebar({
 
   return (
     <motion.div
-      className="absolute top-20 right-4 bottom-4 w-[280px] z-30 bg-bg-secondary/90 backdrop-blur-xl
-                 border border-border-subtle rounded-2xl overflow-hidden flex flex-col"
+      className="absolute top-20 right-4 bottom-4 w-[280px] z-30 bg-white/8 backdrop-blur-xl
+                 border border-white/12 rounded-2xl overflow-hidden flex flex-col"
       initial={{ x: 300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ type: "spring", damping: 25 }}
     >
       {/* Header */}
-      <div className="px-4 py-3 border-b border-border-subtle">
+      <div className="px-4 py-3 border-b border-white/10">
         <p className="text-text-primary text-sm font-medium">
           {locale === "bg" ? "Вашите полета" : "Your Fields"}
         </p>
@@ -57,7 +57,7 @@ export default function ParcelSidebar({
           return (
             <motion.div
               key={p.id}
-              className="p-3 bg-bg-tertiary/50 rounded-lg group"
+              className="p-3 bg-white/6 rounded-lg group"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.1 }}
@@ -83,7 +83,7 @@ export default function ParcelSidebar({
                 </button>
               </div>
               {/* Per-parcel coverage summary */}
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-subtle/50 text-[10px]">
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10 text-[10px]">
                 <span className="text-text-tertiary flex items-center gap-1">
                   <Shield className="w-2.5 h-2.5" />
                   {locale === "bg" ? "Макс. изплащане" : "Max payout"}
@@ -98,7 +98,7 @@ export default function ParcelSidebar({
       </div>
 
       {/* Summary + Actions */}
-      <div className="px-3 py-3 border-t border-border-subtle space-y-2">
+      <div className="px-3 py-3 border-t border-white/10 space-y-2">
         {/* Totals */}
         <div className="space-y-1 px-1">
           <div className="flex justify-between text-xs">
@@ -121,9 +121,9 @@ export default function ParcelSidebar({
 
         <button
           onClick={onAddMore}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-bg-tertiary/50
-                     border border-border-subtle rounded-xl text-text-secondary text-xs
-                     hover:text-text-primary hover:bg-bg-tertiary transition-all cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-white/6
+                     border border-white/10 rounded-xl text-text-secondary text-xs
+                     hover:text-text-primary hover:bg-white/10 transition-all cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           {locale === "bg" ? "Добави ново поле" : "Add another field"}

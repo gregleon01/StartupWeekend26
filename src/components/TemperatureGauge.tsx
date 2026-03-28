@@ -41,7 +41,7 @@ export default function TemperatureGauge({
       </div>
 
       {/* Vertical gauge bar */}
-      <div className="relative w-12 h-[300px] rounded-full overflow-hidden bg-bg-tertiary border border-border-subtle">
+      <div className="relative w-12 h-[300px] rounded-full overflow-hidden bg-white/6 border border-white/12">
         {/* Gradient background: red (top/hot) → white (0°C) → blue (bottom/cold) */}
         <div
           className="absolute inset-0 rounded-full"

@@ -41,7 +41,7 @@ export default function CoverageCard({
       <div className="absolute inset-0 bg-black/35 backdrop-blur-sm" />
 
       <motion.div
-        className="relative w-full max-w-[400px] bg-bg-secondary/80 backdrop-blur-2xl border border-border-subtle rounded-2xl p-6 shadow-2xl"
+        className="relative w-full max-w-[400px] bg-white/8 backdrop-blur-2xl border border-white/12 rounded-2xl p-6 shadow-2xl"
         initial={{ y: 60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 60, opacity: 0 }}
@@ -103,7 +103,7 @@ export default function CoverageCard({
 
         {/* Basis risk confidence */}
         {enrichment && (
-          <div className="p-3 bg-bg-tertiary/50 rounded-lg mb-5 text-xs space-y-2">
+          <div className="p-3 bg-white/6 border border-white/8 rounded-lg mb-5 text-xs space-y-2">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-text-tertiary uppercase tracking-wider">
@@ -133,7 +133,7 @@ export default function CoverageCard({
 
         {/* Multi-parcel portfolio breakdown */}
         {parcels && parcels.length > 1 && (
-          <div className="mb-5 p-3 bg-bg-tertiary/50 rounded-lg space-y-2">
+          <div className="mb-5 p-3 bg-white/6 border border-white/8 rounded-lg space-y-2">
             <p className="text-text-tertiary text-[9px] uppercase tracking-widest mb-2">
               {t("coverage.allFields")}
             </p>
@@ -151,7 +151,7 @@ export default function CoverageCard({
                 </div>
               );
             })}
-            <div className="border-t border-border-subtle pt-2 flex justify-between text-xs">
+            <div className="border-t border-white/10 pt-2 flex justify-between text-xs">
               <span className="text-text-tertiary">{t("coverage.totalPayout")}</span>
               <span className="font-mono font-bold text-accent-amber">
                 €{parcels.reduce((s, p) => s + Math.round(contracts[p.crop].payoutPerHectare * p.hectares), 0).toLocaleString()}
