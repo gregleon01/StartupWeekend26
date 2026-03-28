@@ -77,14 +77,10 @@ export default function Home() {
         dimmed={mapDimmed}
       />
 
-      {/* Niva branding + language toggle */}
-      {state === "MAP_SELECT" && (
-        <div className="absolute top-4 left-4 z-20 flex items-center gap-3">
-          <span className="text-text-primary font-semibold text-sm tracking-wide">{t("map.title")}</span>
-          <span className="text-text-tertiary text-xs">· {t("map.subtitle")}</span>
-          <LanguageToggle />
-        </div>
-      )}
+      {/* Language toggle — always top-right */}
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageToggle />
+      </div>
 
       {/* Back button — visible on all steps except MAP_SELECT and SIMULATION */}
       {showBack && (

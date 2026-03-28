@@ -8,9 +8,9 @@ export default function LanguageToggle() {
   return (
     <button
       onClick={() => setLocale(locale === "bg" ? "en" : "bg")}
-      className="px-2.5 py-1 bg-bg-tertiary/60 backdrop-blur-md border border-border-subtle
-                 rounded-lg text-text-secondary text-xs font-mono hover:text-text-primary
-                 hover:bg-bg-tertiary transition-all cursor-pointer"
+      className="px-3 py-1.5 bg-bg-secondary border border-border-subtle
+                 rounded-lg text-text-secondary text-xs hover:text-text-primary
+                 hover:brightness-110 transition-all cursor-pointer"
     >
       {t("lang")}
     </button>
