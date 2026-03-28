@@ -25,6 +25,7 @@ interface DrawableMapProps {
   dimmed?: boolean;
   weatherMode?: OverlayMode;
   onWeatherModeChange?: (mode: OverlayMode) => void;
+  flyTo?: [number, number] | null;
 }
 
 /**
@@ -46,6 +47,7 @@ export default function DrawableMap({
   dimmed = false,
   weatherMode,
   onWeatherModeChange,
+  flyTo,
 }: DrawableMapProps) {
   const { locale } = useLocale();
   const mapRef = useRef<MapRef>(null);
@@ -185,6 +187,17 @@ export default function DrawableMap({
       });
     }
   }, [parcels.length]);
+
+  // Fly to geocoded address when provided
+  useEffect(() => {
+    if (flyTo && mapRef.current) {
+      mapRef.current.flyTo({
+        center: flyTo,
+        zoom: 12,
+        duration: 1800,
+      });
+    }
+  }, [flyTo]);
 
   return (
     <div className="absolute inset-0">

@@ -44,6 +44,8 @@ export default function FarmerPage() {
   const [contract, setContract] = useState<ParametricContract | null>(null);
   const [enrichment, setEnrichment] = useState<FieldEnrichment | null>(null);
 
+  const [flyToCoords, setFlyToCoords] = useState<[number, number] | null>(null);
+
   const weather = useWeatherData();
   const [weatherMode, setWeatherMode] = useState<OverlayMode>("none");
   const [weatherOpen, setWeatherOpen] = useState(false);
@@ -146,6 +148,7 @@ export default function FarmerPage() {
         dimmed={mapDimmed}
         weatherMode={weatherMode}
         onWeatherModeChange={setWeatherMode}
+        flyTo={flyToCoords}
       />
 
       {/* Aklima home — top left */}
@@ -301,7 +304,20 @@ export default function FarmerPage() {
             address={farmAddress}
             onNameChange={setFarmerName}
             onAddressChange={setFarmAddress}
-            onContinue={() => setState("DRAWING")}
+            onContinue={async () => {
+              if (farmAddress.trim()) {
+                try {
+                  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
+                  const res = await fetch(
+                    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(farmAddress)}.json?access_token=${token}&limit=1&bbox=22.3,41.2,28.6,44.2`
+                  );
+                  const data = await res.json();
+                  const coords = data.features?.[0]?.center as [number, number] | undefined;
+                  if (coords) setFlyToCoords(coords);
+                } catch { /* silently ignore */ }
+              }
+              setState("DRAWING");
+            }}
           />
         )}
 
