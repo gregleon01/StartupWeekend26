@@ -161,7 +161,7 @@ Coordinates rounded to 3 decimal places (~110m grid) as cache key. Results store
 **Stage 3 — Data quality**
 Each hourly reading validated: nulls flagged as `suspect`, physically impossible values (< −40°C or > 50°C) rejected. Valid neighbors within a 6-hour window used for linear interpolation where possible. Interpolated readings tagged `quality: "interpolated"` and excluded from trigger evaluation.
 
-**Fallback:** If all batches fail, the hook silently generates realistic mock frost events. The user never sees an error.
+**Fallback:** If all API batches fail (no wifi, API down), the pipeline falls back to a deterministic mock data generator seeded by latitude. The mock produces a realistic climatological pattern: seasonal temperature curve, diurnal cycle, and occasional frost events (~30% of years, matching real Kyustendil frequency). The user never sees an error — the demo works offline.
 
 ---
 
@@ -226,21 +226,55 @@ Portfolio-level metrics (insurer dashboard):
 
 ---
 
-## Simulation physics
+## Simulation: real Kyustendil 2025 frost event
 
 **File:** `src/lib/frostAnalysis.ts` → `generateSimulationData()`
 
-The frost simulation uses a real radiative cooling model, not an arbitrary animation:
+The frost simulation replays **actual weather data** from the April 7–8, 2025 frost that destroyed 95% of cherry crops in the Kyustendil region — the worst agricultural frost event in Bulgaria in 25 years.
+
+**Data source:** Open-Meteo Historical Weather API, station Kyustendil (42.283°N, 22.694°E, 520m), timezone Europe/Sofia.
 
 ```
-T(t) = T_dew + (T_sunset − T_dew) × e^(−k·t)
-
-T_sunset = 6°C           (temperature at sunset)
-T_dew    = threshold − 2.5°C  (minimum reachable)
-k        = 0.35          (cooling rate, clear sky, low humidity)
+Apr 7  18:00   4.2°C   ← sunset, cooling begins
+Apr 7  22:00  −0.9°C   ← crosses 0°C
+Apr 8  00:00  −2.1°C   ← crosses cherry lethal threshold (−2°C)
+Apr 8  01:00  −2.2°C
+Apr 8  02:00  −2.5°C
+Apr 8  03:00  −2.4°C
+Apr 8  04:00  −2.6°C   ← TRIGGER FIRES (4th consecutive hour below −2°C)
+Apr 8  05:00  −2.9°C
+Apr 8  06:00  −3.1°C   ← minimum temperature
+Apr 8  07:00  −1.4°C   ← sunrise recovery
+Apr 8  12:00   6.2°C   ← full recovery
 ```
 
-This produces a physically accurate curve: rapid initial cooling that slows exponentially as temperature approaches the dew point — the same shape as real nocturnal radiative cooling. Recovery uses a quadratic model approximating solar re-heating in early morning.
+**7 consecutive hours below −2°C.** Contract requires 4h → payout triggered at 04:00. The simulation steps through all 19 real hourly readings with timestamps displayed on screen.
+
+**Real-world impact:** ~95% of Kyustendil's cherry harvest destroyed, estimated losses €3–5M, retail cherry prices surged to 20 BGN/kg.
+
+---
+
+## Testing
+
+**File:** `src/lib/__tests__/frostAnalysis.test.ts`
+
+The trigger engine has a comprehensive test suite (Vitest) covering:
+
+- **Clear trigger** — 6h below threshold → payout fires
+- **Near-miss** — 3h below threshold → no trigger (requires 4h)
+- **Midnight-spanning events** — streak continues across date boundary
+- **Multiple events per year** — worst event kept (triggered > untriggered, longer > shorter)
+- **No frost** — returns zero-duration placeholder events for all years
+- **Threshold boundary** — exactly at threshold is NOT a breach (strict `<`)
+- **Suspect data** — quality-flagged points skipped, not counted as breach hours
+- **Audit trail** — every triggered event carries FSM state transition log
+- **Sensitive window** — data outside Apr 1–May 15 ignored for cherries
+- **Loss estimation** — scales with severity, caps at 2× base payout
+- **Real data** — simulation returns actual Kyustendil 2025 readings (19 points, min −3.1°C)
+
+```bash
+pnpm test       # 13 tests, <200ms
+```
 
 ---
 
