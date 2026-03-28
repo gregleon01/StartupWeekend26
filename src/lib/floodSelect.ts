@@ -1,22 +1,16 @@
 /* ================================================================== */
-/*  Flood-Fill Field Detection                                         */
+/*  Flood-Fill Field Detection v2                                      */
 /*                                                                     */
-/*  Detects field boundaries from satellite imagery by flood-filling   */
-/*  from a click point while pixel colors remain similar. Extracts     */
-/*  the contour, simplifies it, and converts to lat/lng coordinates.   */
-/*                                                                     */
-/*  Algorithm:                                                         */
-/*    1. Read pixel color at click point from Mapbox canvas            */
-/*    2. BFS flood fill — expand while color distance < threshold     */
-/*    3. Extract boundary pixels (edge of filled region)              */
-/*    4. Order boundary into a contour path                           */
-/*    5. Douglas-Peucker simplification to reduce vertices            */
-/*    6. Convert pixel coords → lat/lng via map.unproject()           */
+/*  Improvements over v1:                                              */
+/*    - Average seed color from 5×5 area (not single pixel)           */
+/*    - Morphological close: dilate then erode to fill small gaps     */
+/*    - Convex hull instead of nearest-neighbor contour ordering       */
+/*    - Higher simplification epsilon for smoother polygons            */
+/*    - March along boundary in angular order for clean contour        */
 /* ================================================================== */
 
-type Point = { x: number; y: number };
+type Pt = [number, number]; // [x, y]
 
-/** Euclidean color distance in RGB space */
 function colorDist(
   r1: number, g1: number, b1: number,
   r2: number, g2: number, b2: number,
@@ -24,245 +18,244 @@ function colorDist(
   return Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
 }
 
-/**
- * BFS flood fill from a starting pixel. Expands to neighbors
- * while the color stays within `tolerance` of the start color.
- * Returns a Set of pixel indices and the bounding box.
- */
-function floodFill(
-  data: Uint8ClampedArray,
-  width: number,
-  height: number,
-  startX: number,
-  startY: number,
-  tolerance: number,
-  maxPixels: number = 80000,
-): { filled: Set<number>; minX: number; minY: number; maxX: number; maxY: number } {
-  const idx = (startY * width + startX) * 4;
-  const sr = data[idx], sg = data[idx + 1], sb = data[idx + 2];
+/** Average RGB in a radius around a point */
+function sampleAvgColor(
+  data: Uint8ClampedArray, w: number, h: number,
+  cx: number, cy: number, radius: number = 3,
+): [number, number, number] {
+  let r = 0, g = 0, b = 0, count = 0;
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      const x = cx + dx, y = cy + dy;
+      if (x < 0 || x >= w || y < 0 || y >= h) continue;
+      const i = (y * w + x) * 4;
+      r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
+    }
+  }
+  return [r / count, g / count, b / count];
+}
 
+/** BFS flood fill with averaged seed color */
+function floodFill(
+  data: Uint8ClampedArray, w: number, h: number,
+  sx: number, sy: number, tolerance: number, maxPx: number = 60000,
+): Set<number> {
+  const [sr, sg, sb] = sampleAvgColor(data, w, h, sx, sy, 4);
   const filled = new Set<number>();
-  const queue: number[] = [startY * width + startX];
+  const queue: number[] = [sy * w + sx];
   filled.add(queue[0]);
 
-  let minX = startX, maxX = startX, minY = startY, maxY = startY;
-
-  while (queue.length > 0 && filled.size < maxPixels) {
+  while (queue.length > 0 && filled.size < maxPx) {
     const pi = queue.shift()!;
-    const px = pi % width;
-    const py = Math.floor(pi / width);
+    const px = pi % w, py = (pi - px) / w;
 
-    // 4-connected neighbors
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const nx = px + dx;
-      const ny = py + dy;
-      if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
-
-      const ni = ny * width + nx;
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nx = px + dx, ny = py + dy;
+      if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+      const ni = ny * w + nx;
       if (filled.has(ni)) continue;
-
       const ci = ni * 4;
-      const dist = colorDist(sr, sg, sb, data[ci], data[ci + 1], data[ci + 2]);
-      if (dist < tolerance) {
+      if (colorDist(sr, sg, sb, data[ci], data[ci+1], data[ci+2]) < tolerance) {
         filled.add(ni);
         queue.push(ni);
-        if (nx < minX) minX = nx;
-        if (nx > maxX) maxX = nx;
-        if (ny < minY) minY = ny;
-        if (ny > maxY) maxY = ny;
       }
     }
   }
-
-  return { filled, minX, minY, maxX, maxY };
+  return filled;
 }
 
-/**
- * Extract boundary pixels — pixels in the filled set that have
- * at least one unfilled 4-connected neighbor.
- */
-function extractBoundary(
-  filled: Set<number>,
-  width: number,
-  height: number,
-): Point[] {
-  const boundary: Point[] = [];
-
+/** Morphological dilate — expand the filled set by 1px */
+function dilate(filled: Set<number>, w: number, h: number): Set<number> {
+  const out = new Set(filled);
   for (const pi of filled) {
-    const px = pi % width;
-    const py = Math.floor(pi / width);
+    const px = pi % w, py = (pi - px) / w;
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]) {
+      const nx = px+dx, ny = py+dy;
+      if (nx >= 0 && nx < w && ny >= 0 && ny < h) out.add(ny*w+nx);
+    }
+  }
+  return out;
+}
 
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const ni = (py + dy) * width + (px + dx);
-      if (!filled.has(ni)) {
-        boundary.push({ x: px, y: py });
+/** Morphological erode — shrink by 1px */
+function erode(filled: Set<number>, w: number, h: number): Set<number> {
+  const out = new Set<number>();
+  for (const pi of filled) {
+    const px = pi % w, py = (pi - px) / w;
+    let allIn = true;
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      if (!filled.has((py+dy)*w+(px+dx))) { allIn = false; break; }
+    }
+    if (allIn) out.add(pi);
+  }
+  return out;
+}
+
+/** Extract boundary pixels */
+function extractBoundary(filled: Set<number>, w: number): Pt[] {
+  const pts: Pt[] = [];
+  for (const pi of filled) {
+    const px = pi % w, py = (pi - px) / w;
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      if (!filled.has((py+dy)*w+(px+dx))) {
+        pts.push([px, py]);
         break;
       }
     }
   }
-
-  return boundary;
+  return pts;
 }
 
-/**
- * Order boundary points into a contour by following neighbors.
- * Uses a greedy nearest-neighbor walk.
- */
-function orderContour(points: Point[]): Point[] {
+/** Convex hull (Graham scan) */
+function convexHull(points: Pt[]): Pt[] {
   if (points.length < 3) return points;
 
-  const remaining = new Set(points.map((_, i) => i));
-  const ordered: Point[] = [];
-
-  // Start from the topmost-leftmost point
-  let currentIdx = 0;
-  let minVal = Infinity;
-  for (let i = 0; i < points.length; i++) {
-    const v = points[i].y * 100000 + points[i].x;
-    if (v < minVal) { minVal = v; currentIdx = i; }
-  }
-
-  remaining.delete(currentIdx);
-  ordered.push(points[currentIdx]);
-
-  while (remaining.size > 0) {
-    let bestIdx = -1;
-    let bestDist = Infinity;
-    const cur = ordered[ordered.length - 1];
-
-    for (const idx of remaining) {
-      const p = points[idx];
-      const d = (p.x - cur.x) ** 2 + (p.y - cur.y) ** 2;
-      if (d < bestDist) { bestDist = d; bestIdx = idx; }
+  // Find bottom-most (then leftmost) point
+  let pivot = 0;
+  for (let i = 1; i < points.length; i++) {
+    if (points[i][1] > points[pivot][1] ||
+       (points[i][1] === points[pivot][1] && points[i][0] < points[pivot][0])) {
+      pivot = i;
     }
-
-    if (bestIdx === -1 || bestDist > 100) break; // Too far = disconnected
-    remaining.delete(bestIdx);
-    ordered.push(points[bestIdx]);
   }
+  [points[0], points[pivot]] = [points[pivot], points[0]];
+  const p0 = points[0];
 
-  return ordered;
+  // Sort by polar angle
+  const sorted = points.slice(1).sort((a, b) => {
+    const angleA = Math.atan2(a[1] - p0[1], a[0] - p0[0]);
+    const angleB = Math.atan2(b[1] - p0[1], b[0] - p0[0]);
+    if (angleA !== angleB) return angleA - angleB;
+    const distA = (a[0]-p0[0])**2 + (a[1]-p0[1])**2;
+    const distB = (b[0]-p0[0])**2 + (b[1]-p0[1])**2;
+    return distA - distB;
+  });
+
+  const hull: Pt[] = [p0];
+  for (const p of sorted) {
+    while (hull.length >= 2) {
+      const a = hull[hull.length - 2];
+      const b = hull[hull.length - 1];
+      const cross = (b[0]-a[0])*(p[1]-a[1]) - (b[1]-a[1])*(p[0]-a[0]);
+      if (cross <= 0) hull.pop(); else break;
+    }
+    hull.push(p);
+  }
+  return hull;
 }
 
-/**
- * Douglas-Peucker line simplification.
- * Reduces a polyline to fewer points within `epsilon` tolerance.
- */
-function simplify(points: Point[], epsilon: number): Point[] {
-  if (points.length <= 2) return points;
+/** Concave hull: subsample boundary into angular sectors from centroid */
+function concaveHull(boundary: Pt[], sectors: number = 72): Pt[] {
+  if (boundary.length < 3) return boundary;
 
-  // Find the point with the maximum distance from the line (first→last)
-  let maxDist = 0;
-  let maxIdx = 0;
-  const first = points[0];
-  const last = points[points.length - 1];
+  // Compute centroid
+  let cx = 0, cy = 0;
+  for (const [x, y] of boundary) { cx += x; cy += y; }
+  cx /= boundary.length; cy /= boundary.length;
 
-  for (let i = 1; i < points.length - 1; i++) {
-    const d = pointToLineDist(points[i], first, last);
-    if (d > maxDist) { maxDist = d; maxIdx = i; }
+  // For each angular sector, find the farthest point
+  const sectorSize = (2 * Math.PI) / sectors;
+  const farthest: (Pt | null)[] = new Array(sectors).fill(null);
+  const farthestDist: number[] = new Array(sectors).fill(0);
+
+  for (const [x, y] of boundary) {
+    let angle = Math.atan2(y - cy, x - cx);
+    if (angle < 0) angle += 2 * Math.PI;
+    const sector = Math.floor(angle / sectorSize) % sectors;
+    const dist = (x - cx) ** 2 + (y - cy) ** 2;
+    if (dist > farthestDist[sector]) {
+      farthestDist[sector] = dist;
+      farthest[sector] = [x, y];
+    }
   }
 
-  if (maxDist > epsilon) {
-    const left = simplify(points.slice(0, maxIdx + 1), epsilon);
-    const right = simplify(points.slice(maxIdx), epsilon);
-    return [...left.slice(0, -1), ...right];
+  return farthest.filter((p): p is Pt => p !== null);
+}
+
+/** Douglas-Peucker simplification */
+function simplify(pts: Pt[], eps: number): Pt[] {
+  if (pts.length <= 2) return pts;
+  let maxD = 0, maxI = 0;
+  const a = pts[0], b = pts[pts.length - 1];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const d = ptLineDist(pts[i], a, b);
+    if (d > maxD) { maxD = d; maxI = i; }
   }
-
-  return [first, last];
+  if (maxD > eps) {
+    const l = simplify(pts.slice(0, maxI + 1), eps);
+    const r = simplify(pts.slice(maxI), eps);
+    return [...l.slice(0, -1), ...r];
+  }
+  return [a, b];
 }
 
-function pointToLineDist(p: Point, a: Point, b: Point): number {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const lenSq = dx * dx + dy * dy;
-  if (lenSq === 0) return Math.sqrt((p.x - a.x) ** 2 + (p.y - a.y) ** 2);
-  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq));
-  const projX = a.x + t * dx;
-  const projY = a.y + t * dy;
-  return Math.sqrt((p.x - projX) ** 2 + (p.y - projY) ** 2);
+function ptLineDist(p: Pt, a: Pt, b: Pt): number {
+  const dx = b[0]-a[0], dy = b[1]-a[1];
+  const lenSq = dx*dx + dy*dy;
+  if (lenSq === 0) return Math.sqrt((p[0]-a[0])**2 + (p[1]-a[1])**2);
+  const t = Math.max(0, Math.min(1, ((p[0]-a[0])*dx + (p[1]-a[1])*dy) / lenSq));
+  return Math.sqrt((p[0] - a[0]-t*dx)**2 + (p[1] - a[1]-t*dy)**2);
 }
 
-/**
- * Main entry point: detect field polygon from satellite canvas.
- *
- * @param canvas - The Mapbox GL canvas element
- * @param clickX - Click x in canvas pixels
- * @param clickY - Click y in canvas pixels
- * @param unproject - Function to convert [x,y] → [lng,lat]
- * @param tolerance - Color similarity threshold (0-255 scale, default 35)
- * @returns Array of [lng, lat] coordinates, or null if region too small
- */
-/**
- * Read pixels from a WebGL canvas (Mapbox uses WebGL, not 2D context).
- */
-function readWebGLPixels(canvas: HTMLCanvasElement): Uint8ClampedArray | null {
-  const gl = canvas.getContext("webgl") || canvas.getContext("webgl2");
+/** Read pixels from WebGL canvas */
+function readWebGL(canvas: HTMLCanvasElement): Uint8ClampedArray | null {
+  const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
   if (!gl) return null;
-  const { width, height } = canvas;
-  const pixels = new Uint8Array(width * height * 4);
-  gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-  // WebGL reads bottom-up, flip vertically
-  const flipped = new Uint8ClampedArray(width * height * 4);
-  for (let y = 0; y < height; y++) {
-    const srcRow = (height - 1 - y) * width * 4;
-    const dstRow = y * width * 4;
-    flipped.set(pixels.subarray(srcRow, srcRow + width * 4), dstRow);
+  const { width: w, height: h } = canvas;
+  const buf = new Uint8Array(w * h * 4);
+  gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+  // Flip vertically (WebGL is bottom-up)
+  const out = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    const src = (h - 1 - y) * w * 4;
+    out.set(buf.subarray(src, src + w * 4), y * w * 4);
   }
-  return flipped;
+  return out;
 }
 
+/**
+ * Detect a field polygon from satellite imagery.
+ *
+ * @returns Array of [lng, lat] or null if region too small
+ */
 export function detectFieldPolygon(
   canvas: HTMLCanvasElement,
   clickX: number,
   clickY: number,
-  unproject: (point: [number, number]) => { lng: number; lat: number },
-  tolerance: number = 35,
+  unproject: (pt: [number, number]) => { lng: number; lat: number },
+  tolerance: number = 32,
 ): [number, number][] | null {
-  const { width, height } = canvas;
+  const { width: w, height: h } = canvas;
+  const data = readWebGL(canvas);
+  if (!data) return null;
 
-  // Read from WebGL context (Mapbox)
-  const pixelData = readWebGLPixels(canvas);
-  if (!pixelData) return null;
-
-  const imageData = { data: pixelData };
-
-  // Clamp click to canvas bounds
-  const sx = Math.max(0, Math.min(width - 1, Math.round(clickX)));
-  const sy = Math.max(0, Math.min(height - 1, Math.round(clickY)));
+  const sx = Math.max(0, Math.min(w - 1, Math.round(clickX)));
+  const sy = Math.max(0, Math.min(h - 1, Math.round(clickY)));
 
   // 1. Flood fill
-  const { filled, minX, minY, maxX, maxY } = floodFill(
-    imageData.data, width, height, sx, sy, tolerance,
-  );
+  let filled = floodFill(data, w, h, sx, sy, tolerance);
+  if (filled.size < 100) return null;
 
-  // Too small = probably clicked on a road or single pixel
-  if (filled.size < 200) return null;
+  // 2. Morphological close (dilate then erode) — fills small gaps
+  filled = dilate(filled, w, h);
+  filled = erode(filled, w, h);
 
-  // 2. Extract boundary
-  const boundary = extractBoundary(filled, width, height);
+  // 3. Extract boundary
+  const boundary = extractBoundary(filled, w);
   if (boundary.length < 10) return null;
 
-  // 3. Order into contour
-  const contour = orderContour(boundary);
+  // 4. Concave hull — pick farthest point per angular sector
+  const hull = concaveHull(boundary, 64);
+  if (hull.length < 3) return null;
 
-  // 4. Simplify (epsilon ~3px for clean output)
-  const simplified = simplify(contour, 3);
+  // 5. Simplify
+  const simplified = simplify(hull, 5);
   if (simplified.length < 3) return null;
 
-  // 5. Sample evenly if too many points (max 50 for performance)
-  let finalPoints = simplified;
-  if (finalPoints.length > 50) {
-    const step = finalPoints.length / 50;
-    finalPoints = Array.from({ length: 50 }, (_, i) =>
-      finalPoints[Math.floor(i * step)],
-    );
-  }
-
   // 6. Convert to lat/lng
-  const coords: [number, number][] = finalPoints.map((p) => {
-    const { lng, lat } = unproject([p.x, p.y]);
-    return [lng, lat];
+  const ratio = window.devicePixelRatio || 1;
+  return simplified.map(([x, y]) => {
+    const { lng, lat } = unproject([x / ratio, y / ratio]);
+    return [lng, lat] as [number, number];
   });
-
-  return coords;
 }

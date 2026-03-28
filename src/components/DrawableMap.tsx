@@ -124,14 +124,13 @@ export default function DrawableMap({
       if (!mapRef.current || justCompleted.current) return;
       const map = mapRef.current.getMap();
       const canvas = map.getCanvas();
-      // Mapbox canvas may be scaled (retina) — use CSS pixel position
       const ratio = window.devicePixelRatio || 1;
       const coords = detectFieldPolygon(
         canvas,
         e.point.x * ratio,
         e.point.y * ratio,
-        (pt) => map.unproject([pt[0] / ratio, pt[1] / ratio]),
-        38, // color tolerance
+        (pt) => map.unproject(pt),
+        32,
       );
       if (coords && coords.length >= 3) {
         completePolygon(coords);
