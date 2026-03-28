@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { FarmerParcel, CropKey } from "@/types";
 import { contracts } from "@/lib/contracts";
 import { useLocale } from "@/lib/i18n";
-import WeatherOverlay from "./WeatherOverlay";
+import WeatherOverlay, { type OverlayMode } from "./WeatherOverlay";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
@@ -23,6 +23,8 @@ interface DrawableMapProps {
   drawingEnabled: boolean;
   onPolygonComplete: (coords: [number, number][]) => void;
   dimmed?: boolean;
+  weatherMode?: OverlayMode;
+  onWeatherModeChange?: (mode: OverlayMode) => void;
 }
 
 /**
@@ -42,6 +44,8 @@ export default function DrawableMap({
   drawingEnabled,
   onPolygonComplete,
   dimmed = false,
+  weatherMode,
+  onWeatherModeChange,
 }: DrawableMapProps) {
   const { locale } = useLocale();
   const mapRef = useRef<MapRef>(null);
@@ -191,7 +195,12 @@ export default function DrawableMap({
         cursor={drawingEnabled ? "crosshair" : "default"}
         doubleClickZoom={!drawingEnabled}
       >
-        <WeatherOverlay showControls={!isDrawing} defaultMode="none" />
+        <WeatherOverlay
+          showControls={!isDrawing}
+          defaultMode="none"
+          externalMode={weatherMode}
+          onModeChange={onWeatherModeChange}
+        />
 
         {/* Completed parcels — fill */}
         <Source id="parcels-fill" type="geojson" data={parcelsGeoJSON}>

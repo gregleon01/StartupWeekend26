@@ -5,7 +5,7 @@ import { Source, Layer } from "react-map-gl";
 import { motion, AnimatePresence } from "framer-motion";
 import { Cloud, CloudRain, Thermometer, Layers } from "lucide-react";
 
-type OverlayMode = "none" | "clouds" | "radar" | "temperature";
+export type OverlayMode = "none" | "clouds" | "radar" | "temperature";
 
 interface RainViewerFrame {
   time: number;
@@ -15,6 +15,8 @@ interface RainViewerFrame {
 interface WeatherOverlayProps {
   showControls?: boolean;
   defaultMode?: OverlayMode;
+  externalMode?: OverlayMode;
+  onModeChange?: (mode: OverlayMode) => void;
 }
 
 /**
@@ -28,8 +30,15 @@ interface WeatherOverlayProps {
 export default function WeatherOverlay({
   showControls = true,
   defaultMode = "clouds",
+  externalMode,
+  onModeChange,
 }: WeatherOverlayProps) {
-  const [mode, setMode] = useState<OverlayMode>(defaultMode);
+  const [internalMode, setInternalMode] = useState<OverlayMode>(defaultMode);
+  const mode = externalMode ?? internalMode;
+  const setMode = (m: OverlayMode) => {
+    if (onModeChange) onModeChange(m);
+    else setInternalMode(m);
+  };
   const [radarHost, setRadarHost] = useState("https://tilecache.rainviewer.com");
   const [radarFrames, setRadarFrames] = useState<RainViewerFrame[]>([]);
   const [pastCount, setPastCount] = useState(0);
@@ -153,8 +162,8 @@ export default function WeatherOverlay({
         </Source>
       )}
 
-      {/* Controls */}
-      {showControls && (
+      {/* Controls — hidden when externally controlled */}
+      {showControls && !externalMode && (
         <div className="absolute top-14 left-4 z-30">
           <div className="flex items-center gap-1">
             <motion.button

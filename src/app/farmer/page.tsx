@@ -12,6 +12,8 @@ import { computeHectares, computeCentroid } from "@/lib/geo";
 
 import { useLocale } from "@/lib/i18n";
 import LanguageToggle from "@/components/LanguageToggle";
+import { type OverlayMode } from "@/components/WeatherOverlay";
+import { Cloud, CloudRain, Thermometer, Layers, ChevronDown } from "lucide-react";
 import DrawableMap from "@/components/DrawableMap";
 import ParcelCropSheet from "@/components/ParcelCropSheet";
 import ParcelSidebar from "@/components/ParcelSidebar";
@@ -39,6 +41,8 @@ export default function FarmerPage() {
   const [enrichment, setEnrichment] = useState<FieldEnrichment | null>(null);
 
   const weather = useWeatherData();
+  const [weatherMode, setWeatherMode] = useState<OverlayMode>("none");
+  const [weatherOpen, setWeatherOpen] = useState(false);
 
   // Polygon completed — show crop selector
   const handlePolygonComplete = useCallback((coords: [number, number][]) => {
@@ -129,6 +133,8 @@ export default function FarmerPage() {
         drawingEnabled={drawingEnabled}
         onPolygonComplete={handlePolygonComplete}
         dimmed={mapDimmed}
+        weatherMode={weatherMode}
+        onWeatherModeChange={setWeatherMode}
       />
 
       {/* Unified top bar pill */}
@@ -177,11 +183,64 @@ export default function FarmerPage() {
         {/* Divider */}
         <div className="w-px h-4 bg-white/15" />
 
+        {/* Weather toggle */}
+        <button
+          onClick={() => setWeatherOpen((o) => !o)}
+          className="flex items-center gap-1.5 px-4 py-2 text-white/70 text-xs hover:text-white
+                     hover:bg-white/10 transition-all cursor-pointer whitespace-nowrap"
+        >
+          {weatherMode === "none" && <Layers className="w-3.5 h-3.5" />}
+          {weatherMode === "clouds" && <Cloud className="w-3.5 h-3.5" />}
+          {weatherMode === "radar" && <CloudRain className="w-3.5 h-3.5" />}
+          {weatherMode === "temperature" && <Thermometer className="w-3.5 h-3.5" />}
+          <span>{weatherMode === "none" ? "Layers" : weatherMode.charAt(0).toUpperCase() + weatherMode.slice(1)}</span>
+          <ChevronDown className={`w-3 h-3 transition-transform ${weatherOpen ? "rotate-180" : ""}`} />
+        </button>
+
+        {/* Divider */}
+        <div className="w-px h-4 bg-white/15" />
+
         {/* Language toggle inline */}
         <div className="px-3 py-1.5">
           <LanguageToggle />
         </div>
       </div>
+
+      {/* Weather dropdown */}
+      <AnimatePresence>
+        {weatherOpen && (
+          <motion.div
+            className="absolute top-14 left-1/2 -translate-x-1/2 z-40
+                       bg-black/50 backdrop-blur-md border border-white/15 rounded-2xl
+                       overflow-hidden shadow-xl"
+            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+          >
+            {([
+              { mode: "none" as OverlayMode, icon: <Layers className="w-4 h-4" />, label: "Off" },
+              { mode: "clouds" as OverlayMode, icon: <Cloud className="w-4 h-4" />, label: "Clouds" },
+              { mode: "radar" as OverlayMode, icon: <CloudRain className="w-4 h-4" />, label: "Radar" },
+              { mode: "temperature" as OverlayMode, icon: <Thermometer className="w-4 h-4" />, label: "Temperature" },
+            ]).map(({ mode, icon, label }) => (
+              <button
+                key={mode}
+                onClick={() => { setWeatherMode(mode); setWeatherOpen(false); }}
+                className={`w-full flex items-center gap-3 px-5 py-3 text-sm transition-all cursor-pointer
+                  ${weatherMode === mode
+                    ? "bg-white/15 text-white"
+                    : "text-white/60 hover:bg-white/8 hover:text-white"
+                  }`}
+              >
+                {icon}
+                {label}
+                {weatherMode === mode && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-accent-amber" />}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Field info bar when viewing analysis */}
       {activeParcel && enrichment && (state === "HISTORY" || state === "COVERAGE") && (
