@@ -170,7 +170,7 @@ export default function FarmerPage() {
             <Link
               href="/"
               className="flex items-center gap-1.5 px-5 py-2.5 text-white/60 text-xs
-                         hover:text-white hover:bg-white/8 transition-all whitespace-nowrap outline-none"
+                         hover:text-white hover:bg-white/8 rounded-l-full transition-all whitespace-nowrap outline-none"
             >
               <ArrowLeft className="w-3 h-3" />
               Aklima
@@ -207,7 +207,7 @@ export default function FarmerPage() {
 
           {/* Right — Language */}
           <div className="flex justify-end">
-            <div className="px-5 py-2.5">
+            <div className="px-5 py-2.5 rounded-r-full hover:bg-white/8 transition-all">
               <LanguageToggle />
             </div>
           </div>
