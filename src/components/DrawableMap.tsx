@@ -5,6 +5,7 @@ import Map, { Source, Layer, type MapRef } from "react-map-gl";
 import { motion, AnimatePresence } from "framer-motion";
 import type { FarmerParcel, CropKey } from "@/types";
 import { contracts } from "@/lib/contracts";
+import { useLocale } from "@/lib/i18n";
 import WeatherOverlay from "./WeatherOverlay";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -42,6 +43,7 @@ export default function DrawableMap({
   onPolygonComplete,
   dimmed = false,
 }: DrawableMapProps) {
+  const { locale } = useLocale();
   const mapRef = useRef<MapRef>(null);
   const [viewState, setViewState] = useState({
     latitude: 42.7,
@@ -299,10 +301,10 @@ export default function DrawableMap({
           >
             <div className="px-4 py-2.5 bg-bg-secondary/90 backdrop-blur-md border border-border-subtle rounded-xl">
               <p className="text-text-primary text-sm font-medium">
-                Начертайте границите на полето
+                {locale === "bg" ? "Начертайте границите на полето" : "Draw your field boundary"}
               </p>
               <p className="text-text-secondary text-xs mt-0.5">
-                Click to draw your field boundary
+                {locale === "bg" ? "Натиснете за да очертаете полето си" : "Click on the map to start"}
               </p>
             </div>
           </motion.div>
@@ -316,12 +318,12 @@ export default function DrawableMap({
           >
             <div className="px-4 py-2.5 bg-bg-secondary/90 backdrop-blur-md border border-accent-amber/30 rounded-xl">
               <p className="text-accent-amber text-xs font-medium">
-                {drawPoints.length} points · {drawPoints.length >= 3
-                  ? "Click first point or double-click to close"
-                  : "Keep clicking to add points"}
+                {drawPoints.length} {locale === "bg" ? "точки" : "points"} · {drawPoints.length >= 3
+                  ? (locale === "bg" ? "Натисни първата точка или двоен клик за затваряне" : "Click first point or double-click to close")
+                  : (locale === "bg" ? "Продължи да добавяш точки" : "Keep clicking to add points")}
               </p>
               <p className="text-text-tertiary text-[10px] mt-0.5">
-                Esc to undo last point
+                {locale === "bg" ? "Esc за отмяна на последната точка" : "Esc to undo last point"}
               </p>
             </div>
           </motion.div>
