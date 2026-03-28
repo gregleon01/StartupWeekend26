@@ -148,6 +148,17 @@ export default function FarmerPage() {
         onWeatherModeChange={setWeatherMode}
       />
 
+      {/* Aklima home — top left */}
+      <Link
+        href="/"
+        className="absolute top-4 left-4 z-40 flex items-center gap-1.5 px-4 py-2
+                   bg-white/8 backdrop-blur-xl border border-white/12 rounded-full
+                   text-white/60 text-xs hover:text-white hover:bg-white/14 transition-all shadow-xl outline-none"
+      >
+        <ArrowLeft className="w-3 h-3" />
+        Aklima
+      </Link>
+
       {/* Unified top bar pill — two rows */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 w-[580px]
                       bg-white/8 backdrop-blur-xl border border-white/12 rounded-full
@@ -177,15 +188,6 @@ export default function FarmerPage() {
 
         {/* Row 2: actions */}
         <div className="flex items-center justify-center gap-1 px-2 pb-1">
-          {/* Aklima home */}
-          <Link
-            href="/"
-            className="flex items-center px-4 py-1.5 text-white/50 text-xs
-                       hover:text-white hover:bg-white/10 rounded-full transition-all whitespace-nowrap outline-none"
-          >
-            Aklima
-          </Link>
-
           {/* Back — in-flow navigation */}
           <AnimatePresence>
             {showBack && (
@@ -225,9 +227,7 @@ export default function FarmerPage() {
           <div className="w-px h-3.5 bg-white/12 mx-1" />
 
           {/* Language */}
-          <div className="px-4 py-1.5 hover:bg-white/10 rounded-full transition-all">
-            <LanguageToggle />
-          </div>
+          <LanguageToggle />
         </div>
       </div>
 
