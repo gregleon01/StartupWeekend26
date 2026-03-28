@@ -49,7 +49,7 @@ export default function LandingPage() {
         </motion.div>
 
         {/* Role cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
           <RoleCard
             href="/farmer"
             icon={<Sprout className="w-8 h-8" />}
@@ -115,9 +115,9 @@ function RoleCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, type: "spring", damping: 20 }}
     >
-      <Link href={href}>
+      <Link href={href} className="h-full">
         <div
-          className="group relative p-6 bg-bg-secondary border border-border-subtle rounded-2xl
+          className="group relative h-full p-6 bg-bg-secondary border border-border-subtle rounded-2xl
                      hover:border-border-subtle/80 hover:bg-bg-tertiary/30 transition-all cursor-pointer"
         >
           <div className={`w-14 h-14 ${accentBg} rounded-xl flex items-center justify-center mb-4`}>

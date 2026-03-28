@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from "react";
 import { LocaleContext, translations, type Locale, type TranslationKey } from "@/lib/i18n";
 
 export default function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocale] = useState<Locale>("bg");
+  const [locale, setLocale] = useState<Locale>("en");
 
   const t = useCallback(
     (key: TranslationKey): string => {
