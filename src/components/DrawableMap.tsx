@@ -59,8 +59,6 @@ export default function DrawableMap({
   const [drawPoints, setDrawPoints] = useState<[number, number][]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const justCompleted = useRef(false);
-  const [smartMode, setSmartMode] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(7);
 
   // Build GeoJSON for completed parcels
   const parcelsGeoJSON = {
@@ -119,67 +117,9 @@ export default function DrawableMap({
     [onPolygonComplete],
   );
 
-  /**
-   * Smart Select: query Mapbox vector tile layers for land use polygons
-   * at the click point. If found, auto-create a parcel from the geometry.
-   * Falls back to generating a rectangular field estimate.
-   */
-  const smartSelect = useCallback(
-    (e: mapboxgl.MapLayerMouseEvent) => {
-      if (!mapRef.current || justCompleted.current) return;
-      const map = mapRef.current.getMap();
-
-      // Query all rendered features at this point — look for polygons
-      const features = map.queryRenderedFeatures(e.point);
-
-      // Find the best polygon feature (prefer landuse, then landcover, then any)
-      let bestFeature: mapboxgl.MapboxGeoJSONFeature | null = null;
-      const priorityLayers = ["landuse", "landcover", "land-structure"];
-
-      for (const prio of priorityLayers) {
-        const match = features.find(
-          (f) => f.layer?.id?.includes(prio) && f.geometry.type === "Polygon",
-        );
-        if (match) { bestFeature = match; break; }
-      }
-      if (!bestFeature) {
-        bestFeature = features.find((f) => f.geometry.type === "Polygon") ?? null;
-      }
-
-      if (bestFeature && bestFeature.geometry.type === "Polygon") {
-        const ring = bestFeature.geometry.coordinates[0] as [number, number][];
-        const coords = ring.slice(0, -1);
-        if (coords.length >= 3) {
-          completePolygon(coords);
-          return;
-        }
-      }
-
-      // No polygon found — generate a rectangular parcel (~2ha)
-      const lng = e.lngLat.lng;
-      const lat = e.lngLat.lat;
-      const dLng = 0.0015; // ~120m
-      const dLat = 0.001;  // ~110m
-      const rect: [number, number][] = [
-        [lng - dLng, lat - dLat],
-        [lng + dLng, lat - dLat],
-        [lng + dLng, lat + dLat],
-        [lng - dLng, lat + dLat],
-      ];
-      completePolygon(rect);
-    },
-    [completePolygon],
-  );
-
   const handleClick = useCallback(
     (e: mapboxgl.MapLayerMouseEvent) => {
       if (!drawingEnabled || justCompleted.current) return;
-
-      // Smart select mode — one click auto-detects the parcel
-      if (smartMode) {
-        smartSelect(e);
-        return;
-      }
 
       const point: [number, number] = [e.lngLat.lng, e.lngLat.lat];
 
@@ -206,7 +146,7 @@ export default function DrawableMap({
 
       setDrawPoints((prev) => [...prev, point]);
     },
-    [drawingEnabled, isDrawing, drawPoints, completePolygon, smartMode, smartSelect],
+    [drawingEnabled, isDrawing, drawPoints, completePolygon],
   );
 
   // Double-click to close polygon
@@ -263,13 +203,13 @@ export default function DrawableMap({
       <Map
         ref={mapRef}
         {...viewState}
-        onMove={(e) => { setViewState(e.viewState); setZoomLevel(e.viewState.zoom); }}
+        onMove={(e) => setViewState(e.viewState)}
         onClick={handleClick}
         onDblClick={handleDblClick}
         mapboxAccessToken={MAPBOX_TOKEN}
         mapStyle="mapbox://styles/mapbox/satellite-streets-v12"
         style={{ width: "100%", height: "100%" }}
-        cursor={drawingEnabled ? (smartMode ? "pointer" : "crosshair") : "default"}
+        cursor={drawingEnabled ? "crosshair" : "default"}
         doubleClickZoom={!drawingEnabled}
       >
         <WeatherOverlay
@@ -378,7 +318,7 @@ export default function DrawableMap({
 
       {/* Drawing point counter — shown while actively drawing (manual mode) */}
       <AnimatePresence>
-        {isDrawing && !smartMode && (
+        {isDrawing && (
           <motion.div
             className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
             initial={{ opacity: 0, y: -10 }}
@@ -396,36 +336,6 @@ export default function DrawableMap({
         )}
       </AnimatePresence>
 
-      {/* Smart Select toggle — bottom center */}
-      {drawingEnabled && !isDrawing && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
-          <button
-            onClick={() => setSmartMode(false)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium transition-all cursor-pointer shadow-xl ${
-              !smartMode
-                ? "bg-white text-black"
-                : "bg-white/8 backdrop-blur-xl border border-white/12 text-white/60 hover:text-white"
-            }`}
-          >
-            ✏️ {locale === "bg" ? "Ръчно" : "Manual Draw"}
-          </button>
-          <button
-            onClick={() => setSmartMode(true)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium transition-all cursor-pointer shadow-xl ${
-              smartMode
-                ? "bg-accent-amber text-bg-primary"
-                : "bg-white/8 backdrop-blur-xl border border-white/12 text-white/60 hover:text-white"
-            }`}
-          >
-            ✨ {locale === "bg" ? "Авто-разпознаване" : "Smart Select"}
-          </button>
-          {smartMode && zoomLevel < 14 && (
-            <span className="text-accent-amber/70 text-[10px] ml-1 animate-pulse">
-              Zoom in more for best results
-            </span>
-          )}
-        </div>
-      )}
     </div>
   );
 }
