@@ -78,9 +78,20 @@ export default function FarmerPage() {
     [pendingCoords, pendingHectares],
   );
 
-  // Stay in PARCELS — drawing is enabled there too, sidebar stays visible
-  const handleAddMore = useCallback(() => {
-    setState("PARCELS");
+  // Geocode the typed address and fly the map there, then enable drawing
+  const handleAddMore = useCallback(async (address: string) => {
+    if (address.trim()) {
+      try {
+        const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
+        const res = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${token}&limit=1&bbox=22.3,41.2,28.6,44.2`
+        );
+        const data = await res.json();
+        const coords = data.features?.[0]?.center as [number, number] | undefined;
+        if (coords) setFlyToCoords(coords);
+      } catch { /* silently ignore */ }
+    }
+    setState("DRAWING");
   }, []);
 
   // Analyze the most valuable parcel (highest payout × hectares)

@@ -1,14 +1,15 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Plus, ArrowRight, Trash2, Shield } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, ArrowRight, Trash2, Shield, MapPin, ArrowRight as Go } from "lucide-react";
 import type { FarmerParcel } from "@/types";
 import { contracts } from "@/lib/contracts";
 import { useLocale } from "@/lib/i18n";
 
 interface ParcelSidebarProps {
   parcels: FarmerParcel[];
-  onAddMore: () => void;
+  onAddMore: (address: string) => void;
   onContinue: () => void;
   onRemove: (id: string) => void;
 }
@@ -20,6 +21,8 @@ export default function ParcelSidebar({
   onRemove,
 }: ParcelSidebarProps) {
   const { locale } = useLocale();
+  const [searching, setSearching] = useState(false);
+  const [searchAddress, setSearchAddress] = useState("");
 
   const totalHa = parcels.reduce((s, p) => s + p.hectares, 0);
   const totalPremium = parcels.reduce(
@@ -119,15 +122,65 @@ export default function ParcelSidebar({
           </div>
         </div>
 
-        <button
-          onClick={onAddMore}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-white/6
-                     border border-white/10 rounded-xl text-white/70 text-xs
-                     hover:text-white hover:bg-white/10 transition-all cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          {locale === "bg" ? "Добави ново поле" : "Add another field"}
-        </button>
+        <AnimatePresence mode="wait">
+          {searching ? (
+            <motion.div
+              key="search"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={{ duration: 0.15 }}
+              className="flex items-center gap-2 px-3 py-2.5 bg-white/6 border border-accent-amber/40
+                         rounded-xl focus-within:border-accent-amber/70 transition-colors"
+            >
+              <MapPin className="w-3.5 h-3.5 text-white/40 flex-shrink-0" />
+              <input
+                autoFocus
+                type="text"
+                value={searchAddress}
+                onChange={(e) => setSearchAddress(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    onAddMore(searchAddress);
+                    setSearching(false);
+                    setSearchAddress("");
+                  }
+                  if (e.key === "Escape") {
+                    setSearching(false);
+                    setSearchAddress("");
+                  }
+                }}
+                placeholder={locale === "bg" ? "Населено място..." : "Location..."}
+                className="flex-1 bg-transparent text-white text-xs outline-none placeholder:text-white/30"
+              />
+              <button
+                onClick={() => {
+                  onAddMore(searchAddress);
+                  setSearching(false);
+                  setSearchAddress("");
+                }}
+                className="text-accent-amber hover:brightness-110 cursor-pointer"
+              >
+                <Go className="w-3.5 h-3.5" />
+              </button>
+            </motion.div>
+          ) : (
+            <motion.button
+              key="add-btn"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={{ duration: 0.15 }}
+              onClick={() => setSearching(true)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-white/6
+                         border border-white/10 rounded-xl text-white/70 text-xs
+                         hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {locale === "bg" ? "Добави ново поле" : "Add another field"}
+            </motion.button>
+          )}
+        </AnimatePresence>
 
         <button
           onClick={onContinue}
