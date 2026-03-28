@@ -30,12 +30,12 @@ export default function TemperatureGauge({
       <div className="text-right">
         <motion.p
           className={`font-mono text-4xl font-bold tabular-nums transition-colors duration-300 ${
-            breached ? "text-danger-red" : "text-text-primary"
+            breached ? "text-danger-red" : "text-white"
           }`}
         >
           {temperature.toFixed(1)}°C
         </motion.p>
-        <p className="text-text-tertiary text-xs uppercase tracking-wider mt-1">
+        <p className="text-white/50 text-xs uppercase tracking-wider mt-1">
           Temperature
         </p>
       </div>

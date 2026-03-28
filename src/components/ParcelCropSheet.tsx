@@ -41,7 +41,7 @@ export default function ParcelCropSheet({ hectares, onSelect }: ParcelCropSheetP
           <p className="text-accent-amber font-mono text-2xl font-bold">
             {hectares} ha
           </p>
-          <p className="text-text-secondary text-sm mt-1">
+          <p className="text-white/70 text-sm mt-1">
             {locale === "bg"
               ? "Какво отглеждате на тази нива?"
               : "What do you grow on this field?"}
@@ -66,17 +66,17 @@ export default function ParcelCropSheet({ hectares, onSelect }: ParcelCropSheetP
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">{c.icon}</span>
                   <div>
-                    <span className="text-text-primary text-sm font-medium block">
+                    <span className="text-white text-sm font-medium block">
                       {locale === "bg" ? c.cropBg : c.crop}
                     </span>
-                    <span className="text-text-tertiary text-[10px] block">
+                    <span className="text-white/50 text-[10px] block">
                       {locale === "bg" ? c.crop : c.cropBg}
                     </span>
                   </div>
                 </div>
                 <div className="space-y-1 text-[11px]">
                   <div className="flex justify-between">
-                    <span className="text-text-tertiary">
+                    <span className="text-white/50">
                       {locale === "bg" ? "Изплащане" : "Payout"}
                     </span>
                     <span className="font-mono text-accent-amber font-bold">
@@ -84,10 +84,10 @@ export default function ParcelCropSheet({ hectares, onSelect }: ParcelCropSheetP
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-tertiary">
+                    <span className="text-white/50">
                       {locale === "bg" ? "Премия" : "Premium"}
                     </span>
-                    <span className="font-mono text-text-secondary">
+                    <span className="font-mono text-white/70">
                       €{totalPremium}/{locale === "bg" ? "сезон" : "season"}
                     </span>
                   </div>
@@ -104,7 +104,7 @@ export default function ParcelCropSheet({ hectares, onSelect }: ParcelCropSheetP
           transition={{ duration: 0.15 }}
         >
           {hovered && (
-            <div className="flex items-center justify-center gap-5 text-[11px] text-text-tertiary py-2">
+            <div className="flex items-center justify-center gap-5 text-[11px] text-white/50 py-2">
               <span className="flex items-center gap-1">
                 <Thermometer className="w-3 h-3" />
                 {hovered.triggerDirection === "below" ? "<" : ">"} {hovered.threshold}{hovered.thresholdUnit}

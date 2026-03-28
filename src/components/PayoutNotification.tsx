@@ -78,10 +78,10 @@ export default function PayoutNotification({
           <div className="w-8 h-8 rounded-full bg-success-green/20 flex items-center justify-center">
             <Check className="w-4 h-4 text-success-green" />
           </div>
-          <p className="text-text-primary font-medium">
+          <p className="text-white font-medium">
             Frost event confirmed
           </p>
-          <span className="ml-auto text-[10px] font-mono text-text-tertiary border border-white/15 px-1.5 py-0.5 rounded">
+          <span className="ml-auto text-[10px] font-mono text-white/50 border border-white/15 px-1.5 py-0.5 rounded">
             DEMO
           </span>
         </motion.div>
@@ -93,13 +93,13 @@ export default function PayoutNotification({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            <p className="text-text-secondary text-sm">
+            <p className="text-white/70 text-sm">
               <span className="font-mono text-frost-blue">
                 {minTemp.toFixed(1)}°C
               </span>{" "}
               for {breachHours}+ hours detected
             </p>
-            <p className="text-text-tertiary text-sm">
+            <p className="text-white/50 text-sm">
               April 14, 2026 &middot; Kyustendil region
             </p>
           </motion.div>
@@ -107,22 +107,22 @@ export default function PayoutNotification({
 
         {/* Payout amount — the star */}
         <div className="mb-1">
-          <p className="text-text-tertiary text-xs uppercase tracking-widest mb-1">
+          <p className="text-white/50 text-xs uppercase tracking-widest mb-1">
             Payout
           </p>
           <p className="font-mono text-5xl font-bold text-success-green leading-none tabular-nums">
             &euro;{animatedAmount.toFixed(2)}
-            <span className="text-lg text-text-tertiary font-normal ml-1">/ha</span>
+            <span className="text-lg text-white/50 font-normal ml-1">/ha</span>
           </p>
         </div>
-        <p className="text-text-secondary text-sm mb-5">
+        <p className="text-white/70 text-sm mb-5">
           Sent to account ending &bull;&bull;&bull;4821
         </p>
 
         {/* Footer */}
         {showFooter && (
           <motion.p
-            className="text-text-tertiary text-xs"
+            className="text-white/50 text-xs"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >

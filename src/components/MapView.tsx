@@ -114,10 +114,10 @@ export default function MapView({
             exit={{ opacity: 0, y: -20 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            <p className="text-text-primary text-lg font-medium drop-shadow-lg">
+            <p className="text-white text-lg font-medium drop-shadow-lg">
               Натиснете върху вашата нива
             </p>
-            <p className="text-text-secondary text-sm mt-1 drop-shadow-lg">
+            <p className="text-white/70 text-sm mt-1 drop-shadow-lg">
               Tap on your field
             </p>
           </motion.div>

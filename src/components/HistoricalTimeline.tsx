@@ -164,7 +164,7 @@ export default function HistoricalTimeline({
 
   const trend = useMemo(() => analyzeTrend(events), [events]);
   const TrendIcon = trend.slope > 0.02 ? TrendingUp : trend.slope < -0.02 ? TrendingDown : Minus;
-  const trendColor = trend.slope > 0.02 ? "text-danger-red" : trend.slope < -0.02 ? "text-success-green" : "text-text-tertiary";
+  const trendColor = trend.slope > 0.02 ? "text-danger-red" : trend.slope < -0.02 ? "text-success-green" : "text-white/50";
 
   const [hoveredEvent, setHoveredEvent] = useState<FrostEvent | null>(null);
 
@@ -177,7 +177,7 @@ export default function HistoricalTimeline({
       >
         <div className="flex items-center gap-3 py-8 justify-center">
           <div className="w-5 h-5 border-2 border-accent-amber border-t-transparent rounded-full animate-spin" />
-          <span className="text-text-secondary text-sm">Loading 10 years of data…</span>
+          <span className="text-white/70 text-sm">Loading 10 years of data…</span>
         </div>
       </motion.div>
     );
@@ -195,18 +195,18 @@ export default function HistoricalTimeline({
 
         {/* Header */}
         <div className="px-5 pt-5 pb-3 border-b border-white/10">
-          <p className="text-text-tertiary text-[10px] uppercase tracking-widest mb-2">
+          <p className="text-white/50 text-[10px] uppercase tracking-widest mb-2">
             10-year frost history
           </p>
           <div className="flex items-baseline gap-1.5 mb-1">
             <span className="font-mono text-3xl font-bold text-accent-amber">{animTriggered}</span>
-            <span className="text-text-secondary text-sm">payouts would have triggered</span>
+            <span className="text-white/70 text-sm">payouts would have triggered</span>
           </div>
           <div className="flex items-baseline gap-1.5 mb-2">
             <span className="font-mono text-lg font-bold text-danger-red">
               €{animLoss.toLocaleString()}
             </span>
-            <span className="text-text-tertiary text-xs">in unpaid losses</span>
+            <span className="text-white/50 text-xs">in unpaid losses</span>
           </div>
           <div className={`flex items-center gap-1 text-xs ${trendColor}`}>
             <TrendIcon className="w-3 h-3" />
@@ -220,15 +220,15 @@ export default function HistoricalTimeline({
           <div className="flex items-center gap-3 px-1 mb-2">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-frost-blue" />
-              <span className="text-[9px] text-text-tertiary">Triggered</span>
+              <span className="text-[9px] text-white/50">Triggered</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-white/35" />
-              <span className="text-[9px] text-text-tertiary">No trigger</span>
+              <span className="text-[9px] text-white/50">No trigger</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 border-t border-dashed border-danger-red/60" />
-              <span className="text-[9px] text-text-tertiary">{contract.threshold}°C threshold</span>
+              <span className="text-[9px] text-white/50">{contract.threshold}°C threshold</span>
             </div>
           </div>
 
@@ -243,12 +243,12 @@ export default function HistoricalTimeline({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
               >
-                <p className="text-text-primary font-medium mb-0.5">
+                <p className="text-white font-medium mb-0.5">
                   {new Date(hoveredEvent.date).toLocaleDateString("en-GB", {
                     month: "short", day: "numeric", year: "numeric",
                   })}
                 </p>
-                <p className="text-text-secondary">
+                <p className="text-white/70">
                   <span className="font-mono text-frost-blue">{hoveredEvent.minTemp.toFixed(1)}°C</span>
                   {" "}for {hoveredEvent.durationHours}h
                   {hoveredEvent.triggered && (

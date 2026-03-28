@@ -135,7 +135,7 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
         onClick={onExit}
         className="absolute top-4 left-4 z-50 flex items-center gap-1.5 px-3 py-1.5
                    bg-bg-secondary/80 backdrop-blur-md border border-border-subtle
-                   rounded-lg text-text-secondary text-xs hover:text-text-primary
+                   rounded-lg text-white/70 text-xs hover:text-white
                    hover:bg-bg-secondary transition-all cursor-pointer pointer-events-auto"
       >
         <X className="w-3 h-3" />
@@ -152,7 +152,7 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
             exit={{ opacity: 0 }}
           >
             <div className="px-3 py-1.5 bg-bg-secondary/80 backdrop-blur-md border border-border-subtle rounded-lg">
-              <p className="text-text-tertiary text-xs uppercase tracking-widest">
+              <p className="text-white/50 text-xs uppercase tracking-widest">
                 {t("sim.title")}
               </p>
             </div>
@@ -250,14 +250,14 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
             {simTime && (
               <p className="text-frost-blue text-xs font-mono mb-2">{simTime}</p>
             )}
-            <p className="text-text-tertiary text-xs uppercase tracking-wider mb-1">
+            <p className="text-white/50 text-xs uppercase tracking-wider mb-1">
               {t("sim.hoursBelow")} {contract.threshold}°C
             </p>
             <p className="font-mono text-3xl font-bold tabular-nums">
-              <span className={triggerFired ? "text-accent-amber" : "text-text-primary"}>
+              <span className={triggerFired ? "text-accent-amber" : "text-white"}>
                 {breachHours}h
               </span>
-              <span className="text-text-tertiary text-lg">
+              <span className="text-white/50 text-lg">
                 {" "}
                 / {contract.durationThreshold}h
               </span>
@@ -298,8 +298,8 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
             <button
               onClick={onExit}
               className="flex items-center gap-2 px-5 py-2.5 bg-bg-secondary/90 backdrop-blur-md
-                         border border-border-subtle rounded-xl text-text-secondary text-sm
-                         hover:text-text-primary hover:bg-bg-secondary transition-all cursor-pointer"
+                         border border-border-subtle rounded-xl text-white/70 text-sm
+                         hover:text-white hover:bg-bg-secondary transition-all cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               {t("sim.restart")}

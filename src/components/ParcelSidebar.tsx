@@ -41,10 +41,10 @@ export default function ParcelSidebar({
     >
       {/* Header */}
       <div className="px-4 py-3 border-b border-white/10">
-        <p className="text-text-primary text-sm font-medium">
+        <p className="text-white text-sm font-medium">
           {locale === "bg" ? "Вашите полета" : "Your Fields"}
         </p>
-        <p className="text-text-tertiary text-xs mt-0.5">
+        <p className="text-white/50 text-xs mt-0.5">
           {parcels.length} {locale === "bg" ? "полета" : "fields"} · {totalHa.toFixed(1)} ha
         </p>
       </div>
@@ -66,17 +66,17 @@ export default function ParcelSidebar({
                 <div className="flex items-center gap-2.5">
                   <span className="text-lg">{c.icon}</span>
                   <div>
-                    <p className="text-text-primary text-xs font-medium">
+                    <p className="text-white text-xs font-medium">
                       {locale === "bg" ? c.cropBg : c.crop}
                     </p>
-                    <p className="text-text-tertiary text-[11px] font-mono">
+                    <p className="text-white/50 text-[11px] font-mono">
                       {p.hectares} ha
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => onRemove(p.id)}
-                  className="opacity-0 group-hover:opacity-100 text-text-tertiary hover:text-danger-red
+                  className="opacity-0 group-hover:opacity-100 text-white/50 hover:text-danger-red
                              transition-all cursor-pointer p-1"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -84,7 +84,7 @@ export default function ParcelSidebar({
               </div>
               {/* Per-parcel coverage summary */}
               <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10 text-[10px]">
-                <span className="text-text-tertiary flex items-center gap-1">
+                <span className="text-white/50 flex items-center gap-1">
                   <Shield className="w-2.5 h-2.5" />
                   {locale === "bg" ? "Макс. изплащане" : "Max payout"}
                 </span>
@@ -102,7 +102,7 @@ export default function ParcelSidebar({
         {/* Totals */}
         <div className="space-y-1 px-1">
           <div className="flex justify-between text-xs">
-            <span className="text-text-tertiary">
+            <span className="text-white/50">
               {locale === "bg" ? "Макс. изплащане" : "Max payout"}
             </span>
             <span className="font-mono text-accent-amber font-bold">
@@ -110,10 +110,10 @@ export default function ParcelSidebar({
             </span>
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-text-tertiary">
+            <span className="text-white/50">
               {locale === "bg" ? "Обща премия" : "Total premium"}
             </span>
-            <span className="font-mono text-text-secondary">
+            <span className="font-mono text-white/70">
               €{Math.round(totalPremium).toLocaleString()}/{locale === "bg" ? "сезон" : "season"}
             </span>
           </div>
@@ -122,8 +122,8 @@ export default function ParcelSidebar({
         <button
           onClick={onAddMore}
           className="w-full flex items-center justify-center gap-2 py-2.5 bg-white/6
-                     border border-white/10 rounded-xl text-text-secondary text-xs
-                     hover:text-text-primary hover:bg-white/10 transition-all cursor-pointer"
+                     border border-white/10 rounded-xl text-white/70 text-xs
+                     hover:text-white hover:bg-white/10 transition-all cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           {locale === "bg" ? "Добави ново поле" : "Add another field"}

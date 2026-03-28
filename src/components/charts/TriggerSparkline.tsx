@@ -38,7 +38,7 @@ export default function TriggerSparkline({ fields }: TriggerSparklineProps) {
 
   return (
     <div className="space-y-2">
-      <p className="text-text-tertiary text-xs uppercase tracking-widest">
+      <p className="text-white/50 text-xs uppercase tracking-widest">
         Trigger Risk by Month
       </p>
       <svg

@@ -29,16 +29,16 @@ export default function CropPayoutChart({ fields }: CropPayoutChartProps) {
 
   return (
     <div className="space-y-2.5">
-      <p className="text-text-tertiary text-xs uppercase tracking-widest">
+      <p className="text-white/50 text-xs uppercase tracking-widest">
         Payouts by Crop
       </p>
       {cropData.map((d, i) => (
         <div key={d.crop} className="space-y-1">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-text-secondary">
+            <span className="text-white/70">
               {contracts[d.crop]?.icon} {contracts[d.crop]?.crop}
             </span>
-            <span className="font-mono text-text-primary font-bold">
+            <span className="font-mono text-white font-bold">
               €{Math.round(d.total).toLocaleString()}
             </span>
           </div>
@@ -51,7 +51,7 @@ export default function CropPayoutChart({ fields }: CropPayoutChartProps) {
               transition={{ delay: 0.3 + i * 0.1, duration: 0.8, ease: "easeOut" }}
             />
           </div>
-          <p className="text-text-tertiary text-[10px]">
+          <p className="text-white/50 text-[10px]">
             {d.count} fields triggered
           </p>
         </div>

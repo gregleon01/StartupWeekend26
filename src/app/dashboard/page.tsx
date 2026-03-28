@@ -79,21 +79,21 @@ export default function DashboardPage() {
         <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Shield className="w-5 h-5 text-accent-amber" />
-            <span className="text-text-primary font-medium text-sm">Aklima</span>
-            <span className="text-text-tertiary text-xs">
+            <span className="text-white font-medium text-sm">Aklima</span>
+            <span className="text-white/50 text-xs">
               Insurer Dashboard
             </span>
-            <span className="text-text-tertiary text-xs">&middot;</span>
-            <span className="text-text-secondary text-xs">
+            <span className="text-white/50 text-xs">&middot;</span>
+            <span className="text-white/70 text-xs">
               Kyustendil Region
             </span>
-            <span className="text-text-tertiary text-xs">&middot;</span>
+            <span className="text-white/50 text-xs">&middot;</span>
             {weatherLoading ? (
-              <span className="text-text-tertiary text-xs animate-pulse">
+              <span className="text-white/50 text-xs animate-pulse">
                 Loading historical data…
               </span>
             ) : (
-              <span className={`flex items-center gap-1 text-xs ${isLiveData ? "text-success-green" : "text-text-tertiary"}`}>
+              <span className={`flex items-center gap-1 text-xs ${isLiveData ? "text-success-green" : "text-white/50"}`}>
                 <Radio className="w-3 h-3" />
                 {isLiveData ? "Live historical data · Open-Meteo 2015–2025" : "Fallback rates"}
               </span>
@@ -139,7 +139,7 @@ export default function DashboardPage() {
       {/* Right sidebar — recent activity */}
       <div className="absolute top-[100px] right-0 bottom-0 w-[320px] z-20 bg-bg-secondary/80 backdrop-blur-xl border-l border-border-subtle overflow-y-auto">
         <div className="px-5 py-4">
-          <p className="text-text-tertiary text-xs uppercase tracking-widest mb-4">
+          <p className="text-white/50 text-xs uppercase tracking-widest mb-4">
             Recent Activity
           </p>
 
@@ -157,10 +157,10 @@ export default function DashboardPage() {
                     {contracts[item.crop]?.icon}
                   </span>
                   <div>
-                    <p className="text-text-primary text-xs font-medium">
+                    <p className="text-white text-xs font-medium">
                       Field #{item.fieldId}
                     </p>
-                    <p className="text-text-tertiary text-[11px]">
+                    <p className="text-white/50 text-[11px]">
                       {contracts[item.crop]?.crop}
                     </p>
                   </div>
@@ -169,7 +169,7 @@ export default function DashboardPage() {
                   <p className="font-mono text-danger-red text-sm font-bold">
                     &euro;{item.amount}
                   </p>
-                  <p className="text-text-tertiary text-[10px]">{item.time}</p>
+                  <p className="text-white/50 text-[10px]">{item.time}</p>
                 </div>
               </motion.div>
             ))}
@@ -178,8 +178,8 @@ export default function DashboardPage() {
           {/* Portfolio Risk Metrics */}
           <div className="mt-6 space-y-2">
             <div className="flex items-center gap-1.5 mb-3">
-              <BarChart3 className="w-3.5 h-3.5 text-text-tertiary" />
-              <p className="text-text-tertiary text-xs uppercase tracking-widest">
+              <BarChart3 className="w-3.5 h-3.5 text-white/50" />
+              <p className="text-white/50 text-xs uppercase tracking-widest">
                 Portfolio Risk
               </p>
             </div>
@@ -192,7 +192,7 @@ export default function DashboardPage() {
 
           {/* Legend */}
           <div className="mt-6 space-y-2">
-            <p className="text-text-tertiary text-xs uppercase tracking-widest mb-2">
+            <p className="text-white/50 text-xs uppercase tracking-widest mb-2">
               Legend
             </p>
             <LegendItem color="#66BB6A" label="Covered, no event" />
@@ -225,16 +225,16 @@ function StatPill({
     ? "text-danger-red"
     : amber
       ? "text-accent-amber"
-      : "text-text-primary";
+      : "text-white";
 
   return (
     <div className="flex items-center gap-2 whitespace-nowrap">
-      <div className="text-text-tertiary">{icon}</div>
+      <div className="text-white/50">{icon}</div>
       <span className={`font-mono text-sm font-bold tabular-nums ${color}`}>
         {prefix}
         {value.toLocaleString()}
       </span>
-      <span className="text-text-tertiary text-xs">{label}</span>
+      <span className="text-white/50 text-xs">{label}</span>
     </div>
   );
 }
@@ -250,9 +250,9 @@ function RiskMetric({
 }) {
   return (
     <div className="flex items-center justify-between py-1.5">
-      <span className="text-text-tertiary text-xs">{label}</span>
+      <span className="text-white/50 text-xs">{label}</span>
       <span
-        className={`font-mono text-xs font-bold ${highlight ? "text-accent-amber" : "text-text-primary"}`}
+        className={`font-mono text-xs font-bold ${highlight ? "text-accent-amber" : "text-white"}`}
       >
         {value}
       </span>
@@ -267,7 +267,7 @@ function LegendItem({ color, label }: { color: string; label: string }) {
         className="w-3 h-3 rounded-full"
         style={{ backgroundColor: color }}
       />
-      <span className="text-text-secondary text-xs">{label}</span>
+      <span className="text-white/70 text-xs">{label}</span>
     </div>
   );
 }

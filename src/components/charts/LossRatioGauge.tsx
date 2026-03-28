@@ -39,7 +39,7 @@ export default function LossRatioGauge({ premiums, payouts }: LossRatioGaugeProp
 
   return (
     <div className="space-y-1">
-      <p className="text-text-tertiary text-xs uppercase tracking-widest">
+      <p className="text-white/50 text-xs uppercase tracking-widest">
         Loss Ratio
       </p>
       <div className="flex justify-center">
@@ -87,7 +87,7 @@ export default function LossRatioGauge({ premiums, payouts }: LossRatioGaugeProp
           </text>
         </svg>
       </div>
-      <div className="flex justify-between text-[10px] text-text-tertiary px-2">
+      <div className="flex justify-between text-[10px] text-white/50 px-2">
         <span>Premiums: €{premiums.toLocaleString()}</span>
         <span>Payouts: €{payouts.toLocaleString()}</span>
       </div>

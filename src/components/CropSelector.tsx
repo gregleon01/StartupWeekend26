@@ -33,10 +33,10 @@ export default function CropSelector({ onSelect }: CropSelectorProps) {
       <div className="bg-white/8 backdrop-blur-xl border-t border-white/12 rounded-t-3xl px-6 pt-6 pb-10">
         <div className="w-10 h-1 bg-text-tertiary/40 rounded-full mx-auto mb-5" />
 
-        <p className="text-text-primary text-lg font-medium text-center">
+        <p className="text-white text-lg font-medium text-center">
           {t("crop.title")}
         </p>
-        <p className="text-text-secondary text-sm text-center mb-6">
+        <p className="text-white/70 text-sm text-center mb-6">
           {t("crop.subtitle")}
         </p>
 
@@ -59,10 +59,10 @@ export default function CropSelector({ onSelect }: CropSelectorProps) {
                 `}
               >
                 <span className="text-3xl block mb-2">{c.icon}</span>
-                <span className="text-text-primary text-sm font-medium block">
+                <span className="text-white text-sm font-medium block">
                   {locale === "bg" ? c.cropBg : c.crop}
                 </span>
-                <span className="text-text-tertiary text-xs block mt-0.5">
+                <span className="text-white/50 text-xs block mt-0.5">
                   {locale === "bg" ? c.crop : c.cropBg}
                 </span>
               </motion.button>

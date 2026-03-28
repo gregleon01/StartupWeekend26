@@ -154,7 +154,7 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
           className={`px-3 py-1.5 rounded transition-colors ${
             colorMode === "risk"
               ? "bg-white/15 text-white"
-              : "text-text-tertiary hover:text-text-secondary"
+              : "text-white/50 hover:text-white/70"
           }`}
         >
           Risk
@@ -164,7 +164,7 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
           className={`px-3 py-1.5 rounded transition-colors ${
             colorMode === "zone"
               ? "bg-white/15 text-white"
-              : "text-text-tertiary hover:text-text-secondary"
+              : "text-white/50 hover:text-white/70"
           }`}
         >
           Station Zones
@@ -180,14 +180,14 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
             top: tooltip.y - 10,
           }}
         >
-          <p className="text-text-primary font-medium">
+          <p className="text-white font-medium">
             {contracts[tooltip.field.crop as CropKey]?.icon} Field #{tooltip.field.id}
           </p>
-          <p className="text-text-secondary mt-0.5">
+          <p className="text-white/70 mt-0.5">
             {contracts[tooltip.field.crop as CropKey]?.crop} &middot;{" "}
             {tooltip.field.hectares} ha
           </p>
-          <p className="text-text-secondary">
+          <p className="text-white/70">
             Risk: {tooltip.field.riskScore}/100
           </p>
           {tooltip.field.payoutTriggered && (
@@ -196,12 +196,12 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
             </p>
           )}
           {colorMode === "zone" && (
-            <p className="text-text-secondary mt-0.5">
+            <p className="text-white/70 mt-0.5">
               Zone: {tooltip.field.stationZone.replace("bg-", "").replace(/-/g, " ")}
             </p>
           )}
           {!tooltip.field.covered && (
-            <p className="text-text-tertiary italic mt-0.5">Not covered</p>
+            <p className="text-white/50 italic mt-0.5">Not covered</p>
           )}
         </div>
       )}

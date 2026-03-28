@@ -51,29 +51,29 @@ export default function CoverageCard({
         <div className="flex items-center gap-3 mb-5">
           <span className="text-3xl">{contract.icon}</span>
           <div>
-            <p className="text-text-primary font-medium">{contract.crop}</p>
-            <p className="text-text-tertiary text-xs">{contract.cropBg}</p>
+            <p className="text-white font-medium">{contract.crop}</p>
+            <p className="text-white/50 text-xs">{contract.cropBg}</p>
           </div>
           <Shield className="w-5 h-5 text-accent-amber ml-auto" />
         </div>
 
         {/* Condition */}
         <div className="mb-6 space-y-1.5">
-          <p className="text-text-secondary text-sm leading-relaxed">
+          <p className="text-white/70 text-sm leading-relaxed">
             {t("coverage.if")}{" "}
             <span className="font-mono text-frost-blue font-semibold">
               {contract.threshold}°C
             </span>
           </p>
-          <p className="text-text-secondary text-sm leading-relaxed">
+          <p className="text-white/70 text-sm leading-relaxed">
             {t("coverage.for")}{" "}
-            <span className="font-mono text-text-primary font-semibold">
+            <span className="font-mono text-white font-semibold">
               {contract.durationThreshold} {t("coverage.hours")}
             </span>
           </p>
-          <p className="text-text-secondary text-sm leading-relaxed">
+          <p className="text-white/70 text-sm leading-relaxed">
             {t("coverage.during")}{" "}
-            <span className="text-text-primary font-medium">
+            <span className="text-white font-medium">
               {formatWindow(contract.sensitiveStart, contract.sensitiveEnd)}
             </span>
           </p>
@@ -81,21 +81,21 @@ export default function CoverageCard({
 
         {/* Payout amount — the star */}
         <div className="mb-1">
-          <p className="text-text-tertiary text-xs uppercase tracking-widest mb-1">
+          <p className="text-white/50 text-xs uppercase tracking-widest mb-1">
             {t("coverage.receive")}
           </p>
           <p className="font-mono text-5xl font-bold text-accent-amber leading-none">
             &euro;{contract.payoutPerHectare}
-            <span className="text-lg text-text-tertiary font-normal ml-1">
+            <span className="text-lg text-white/50 font-normal ml-1">
               /ha
             </span>
           </p>
         </div>
 
         {/* Premium */}
-        <p className="text-text-secondary text-sm mb-4">
+        <p className="text-white/70 text-sm mb-4">
           {t("coverage.premium")}:{" "}
-          <span className="font-mono text-text-primary">
+          <span className="font-mono text-white">
             &euro;{contract.premiumPerHectare}
           </span>
           {t("coverage.perSeason")}
@@ -106,10 +106,10 @@ export default function CoverageCard({
           <div className="p-3 bg-white/6 border border-white/8 rounded-lg mb-5 text-xs space-y-2">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-text-tertiary uppercase tracking-wider">
+                <p className="text-white/50 uppercase tracking-wider">
                   {t("coverage.confidence")}
                 </p>
-                <p className="text-text-secondary mt-0.5">
+                <p className="text-white/70 mt-0.5">
                   {enrichment.stationDistance}km from {enrichment.nearestStation.name} station
                 </p>
               </div>
@@ -125,7 +125,7 @@ export default function CoverageCard({
                 {Math.round(enrichment.basisRiskConfidence * 100)}%
               </span>
             </div>
-            <p className="text-text-tertiary leading-relaxed">
+            <p className="text-white/50 leading-relaxed">
               {t("coverage.confidenceDesc")}
             </p>
           </div>
@@ -134,32 +134,32 @@ export default function CoverageCard({
         {/* Multi-parcel portfolio breakdown */}
         {parcels && parcels.length > 1 && (
           <div className="mb-5 p-3 bg-white/6 border border-white/8 rounded-lg space-y-2">
-            <p className="text-text-tertiary text-[9px] uppercase tracking-widest mb-2">
+            <p className="text-white/50 text-[9px] uppercase tracking-widest mb-2">
               {t("coverage.allFields")}
             </p>
             {parcels.map((p) => {
               const c = contracts[p.crop];
               return (
                 <div key={p.id} className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1.5 text-text-secondary">
+                  <span className="flex items-center gap-1.5 text-white/70">
                     <span>{c.icon}</span>
                     <span>{p.hectares} ha</span>
                   </span>
-                  <span className="font-mono text-text-primary">
+                  <span className="font-mono text-white">
                     €{Math.round(c.payoutPerHectare * p.hectares).toLocaleString()}
                   </span>
                 </div>
               );
             })}
             <div className="border-t border-white/10 pt-2 flex justify-between text-xs">
-              <span className="text-text-tertiary">{t("coverage.totalPayout")}</span>
+              <span className="text-white/50">{t("coverage.totalPayout")}</span>
               <span className="font-mono font-bold text-accent-amber">
                 €{parcels.reduce((s, p) => s + Math.round(contracts[p.crop].payoutPerHectare * p.hectares), 0).toLocaleString()}
               </span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-text-tertiary">{t("coverage.totalPremium")}</span>
-              <span className="font-mono text-text-secondary">
+              <span className="text-white/50">{t("coverage.totalPremium")}</span>
+              <span className="font-mono text-white/70">
                 €{parcels.reduce((s, p) => s + Math.round(contracts[p.crop].premiumPerHectare * p.hectares), 0).toLocaleString()}/season
               </span>
             </div>

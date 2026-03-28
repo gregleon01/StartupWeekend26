@@ -82,22 +82,22 @@ export default function AdminPage() {
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <Shield className="w-5 h-5 text-accent-amber" />
-              <span className="text-text-primary font-medium text-sm">Aklima</span>
+              <span className="text-white font-medium text-sm">Aklima</span>
             </Link>
-            <span className="text-text-tertiary text-xs">
+            <span className="text-white/50 text-xs">
               Insurer Dashboard
             </span>
-            <span className="text-text-tertiary text-xs">&middot;</span>
-            <span className="text-text-secondary text-xs">
+            <span className="text-white/50 text-xs">&middot;</span>
+            <span className="text-white/70 text-xs">
               Kyustendil Region
             </span>
-            <span className="text-text-tertiary text-xs">&middot;</span>
+            <span className="text-white/50 text-xs">&middot;</span>
             {weatherLoading ? (
-              <span className="text-text-tertiary text-xs animate-pulse">
+              <span className="text-white/50 text-xs animate-pulse">
                 Loading historical data…
               </span>
             ) : (
-              <span className={`flex items-center gap-1 text-xs ${isLiveData ? "text-success-green" : "text-text-tertiary"}`}>
+              <span className={`flex items-center gap-1 text-xs ${isLiveData ? "text-success-green" : "text-white/50"}`}>
                 <Radio className="w-3 h-3" />
                 {isLiveData ? "Live historical data · Open-Meteo 2015–2025" : "Fallback rates"}
               </span>
@@ -106,7 +106,7 @@ export default function AdminPage() {
           <Link
             href="/"
             className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-tertiary/60 border border-border-subtle
-                       rounded-lg text-text-secondary text-xs hover:text-text-primary transition-all"
+                       rounded-lg text-white/70 text-xs hover:text-white transition-all"
           >
             <Home className="w-3 h-3" />
             Home
@@ -142,8 +142,8 @@ export default function AdminPage() {
           {/* Portfolio Risk Metrics */}
           <div className="space-y-2">
             <div className="flex items-center gap-1.5 mb-3">
-              <BarChart3 className="w-3.5 h-3.5 text-text-tertiary" />
-              <p className="text-text-tertiary text-xs uppercase tracking-widest">
+              <BarChart3 className="w-3.5 h-3.5 text-white/50" />
+              <p className="text-white/50 text-xs uppercase tracking-widest">
                 Portfolio Risk
               </p>
             </div>
@@ -156,7 +156,7 @@ export default function AdminPage() {
 
           {/* Recent Activity */}
           <div className="space-y-2">
-            <p className="text-text-tertiary text-xs uppercase tracking-widest">
+            <p className="text-white/50 text-xs uppercase tracking-widest">
               Recent Payouts
             </p>
             {recentActivity.map((item, i) => (
@@ -170,13 +170,13 @@ export default function AdminPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-base">{contracts[item.crop]?.icon}</span>
                   <div>
-                    <p className="text-text-primary text-[11px] font-medium">Field #{item.fieldId}</p>
-                    <p className="text-text-tertiary text-[10px]">{contracts[item.crop]?.crop}</p>
+                    <p className="text-white text-[11px] font-medium">Field #{item.fieldId}</p>
+                    <p className="text-white/50 text-[10px]">{contracts[item.crop]?.crop}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="font-mono text-danger-red text-xs font-bold">€{item.amount}</p>
-                  <p className="text-text-tertiary text-[9px]">{item.time}</p>
+                  <p className="text-white/50 text-[9px]">{item.time}</p>
                 </div>
               </motion.div>
             ))}
@@ -184,7 +184,7 @@ export default function AdminPage() {
 
           {/* Legend */}
           <div className="space-y-2">
-            <p className="text-text-tertiary text-xs uppercase tracking-widest mb-2">Legend</p>
+            <p className="text-white/50 text-xs uppercase tracking-widest mb-2">Legend</p>
             <LegendItem color="#66BB6A" label="Covered, no event" />
             <LegendItem color="#F5A623" label="Covered, elevated risk" />
             <LegendItem color="#EF5350" label="Payout triggered" />
@@ -201,12 +201,12 @@ function StatPill({
 }: {
   icon: React.ReactNode; value: number; label: string; prefix?: string; amber?: boolean; danger?: boolean;
 }) {
-  const color = danger ? "text-danger-red" : amber ? "text-accent-amber" : "text-text-primary";
+  const color = danger ? "text-danger-red" : amber ? "text-accent-amber" : "text-white";
   return (
     <div className="flex items-center gap-2 whitespace-nowrap">
-      <div className="text-text-tertiary">{icon}</div>
+      <div className="text-white/50">{icon}</div>
       <span className={`font-mono text-sm font-bold tabular-nums ${color}`}>{prefix}{value.toLocaleString()}</span>
-      <span className="text-text-tertiary text-xs">{label}</span>
+      <span className="text-white/50 text-xs">{label}</span>
     </div>
   );
 }
@@ -214,8 +214,8 @@ function StatPill({
 function RiskMetric({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div className="flex items-center justify-between py-1.5">
-      <span className="text-text-tertiary text-xs">{label}</span>
-      <span className={`font-mono text-xs font-bold ${highlight ? "text-accent-amber" : "text-text-primary"}`}>{value}</span>
+      <span className="text-white/50 text-xs">{label}</span>
+      <span className={`font-mono text-xs font-bold ${highlight ? "text-accent-amber" : "text-white"}`}>{value}</span>
     </div>
   );
 }
@@ -224,7 +224,7 @@ function LegendItem({ color, label }: { color: string; label: string }) {
   return (
     <div className="flex items-center gap-2">
       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-      <span className="text-text-secondary text-xs">{label}</span>
+      <span className="text-white/70 text-xs">{label}</span>
     </div>
   );
 }

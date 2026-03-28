@@ -52,10 +52,10 @@ export default function FieldInfoBar({ pin, enrichment }: FieldInfoBarProps) {
         {stats.map((s, i) => (
           <div key={s.label} className="flex items-center gap-6">
             <div className="flex flex-col items-center gap-0.5">
-              <span className="text-[9px] text-text-tertiary uppercase tracking-widest whitespace-nowrap">
+              <span className="text-[9px] text-white/50 uppercase tracking-widest whitespace-nowrap">
                 {s.label}
               </span>
-              <span className={`text-sm font-medium font-mono whitespace-nowrap ${s.valueClass ?? "text-text-primary"}`}>
+              <span className={`text-sm font-medium font-mono whitespace-nowrap ${s.valueClass ?? "text-white"}`}>
                 {s.value}
               </span>
             </div>

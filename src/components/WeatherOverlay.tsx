@@ -169,7 +169,7 @@ export default function WeatherOverlay({
             <motion.button
               onClick={() => setOpen((o) => !o)}
               className="flex items-center gap-2 px-3 py-2 bg-bg-secondary/90 backdrop-blur border border-border-subtle rounded-lg
-                         text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+                         text-white/70 hover:text-white transition-colors cursor-pointer"
               whileTap={{ scale: 0.95 }}
             >
               {modeIcon[mode]}
@@ -196,7 +196,7 @@ export default function WeatherOverlay({
                         ${
                           mode === m
                             ? "bg-accent-amber/20 text-accent-amber border border-accent-amber/30"
-                            : "bg-bg-secondary/90 backdrop-blur border border-border-subtle text-text-secondary hover:text-text-primary"
+                            : "bg-bg-secondary/90 backdrop-blur border border-border-subtle text-white/70 hover:text-white"
                         }`}
                       >
                         {modeIcon[m]}
@@ -216,10 +216,10 @@ export default function WeatherOverlay({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <p className="text-text-tertiary text-[10px] uppercase tracking-wider">
+              <p className="text-white/50 text-[10px] uppercase tracking-wider">
                 Precipitation radar
               </p>
-              <p className="text-text-secondary text-xs font-mono">
+              <p className="text-white/70 text-xs font-mono">
                 {new Date(
                   radarFrames[frameIndex].time * 1000,
                 ).toLocaleTimeString("en-GB", {
