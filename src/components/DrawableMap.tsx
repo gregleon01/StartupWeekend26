@@ -303,7 +303,7 @@ export default function DrawableMap({
       <AnimatePresence>
         {isDrawing && (
           <motion.div
-            className="absolute top-28 left-1/2 -translate-x-1/2 z-10"
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
