@@ -56,6 +56,7 @@ export default function DrawableMap({
   });
   const [drawPoints, setDrawPoints] = useState<[number, number][]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
+  const justCompleted = useRef(false);
 
   // Build GeoJSON for completed parcels
   const parcelsGeoJSON = {
@@ -102,14 +103,26 @@ export default function DrawableMap({
     })),
   };
 
+  const completePolygon = useCallback(
+    (points: [number, number][]) => {
+      if (justCompleted.current) return;
+      justCompleted.current = true;
+      setDrawPoints([]);
+      setIsDrawing(false);
+      onPolygonComplete(points);
+      // Reset guard after a tick so future draws work
+      setTimeout(() => { justCompleted.current = false; }, 300);
+    },
+    [onPolygonComplete],
+  );
+
   const handleClick = useCallback(
     (e: mapboxgl.MapLayerMouseEvent) => {
-      if (!drawingEnabled) return;
+      if (!drawingEnabled || justCompleted.current) return;
 
       const point: [number, number] = [e.lngLat.lng, e.lngLat.lat];
 
       if (!isDrawing) {
-        // Start new polygon
         setIsDrawing(true);
         setDrawPoints([point]);
         return;
@@ -118,39 +131,31 @@ export default function DrawableMap({
       // Check if clicking near the first point to close the polygon
       if (drawPoints.length >= 3) {
         const first = drawPoints[0];
-        const dx = e.point.x;
-        const dy = e.point.y;
         const firstScreen = mapRef.current?.project(first);
         if (firstScreen) {
           const dist = Math.sqrt(
-            (dx - firstScreen.x) ** 2 + (dy - firstScreen.y) ** 2,
+            (e.point.x - firstScreen.x) ** 2 + (e.point.y - firstScreen.y) ** 2,
           );
           if (dist < 20) {
-            // Close polygon
-            onPolygonComplete(drawPoints);
-            setDrawPoints([]);
-            setIsDrawing(false);
+            completePolygon(drawPoints);
             return;
           }
         }
       }
 
-      // Add point
       setDrawPoints((prev) => [...prev, point]);
     },
-    [drawingEnabled, isDrawing, drawPoints, onPolygonComplete],
+    [drawingEnabled, isDrawing, drawPoints, completePolygon],
   );
 
   // Double-click to close polygon
   const handleDblClick = useCallback(
     (e: mapboxgl.MapLayerMouseEvent) => {
-      if (!drawingEnabled || !isDrawing || drawPoints.length < 3) return;
+      if (!drawingEnabled || !isDrawing || drawPoints.length < 3 || justCompleted.current) return;
       e.preventDefault();
-      onPolygonComplete(drawPoints);
-      setDrawPoints([]);
-      setIsDrawing(false);
+      completePolygon(drawPoints);
     },
-    [drawingEnabled, isDrawing, drawPoints, onPolygonComplete],
+    [drawingEnabled, isDrawing, drawPoints, completePolygon],
   );
 
   // Undo last point with Escape
