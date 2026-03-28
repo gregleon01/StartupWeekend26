@@ -98,26 +98,32 @@ export default function CoverageCard({
 
         {/* Basis risk confidence */}
         {enrichment && (
-          <div className="flex items-center justify-between p-3 bg-bg-tertiary/50 rounded-lg mb-5 text-xs">
-            <div>
-              <p className="text-text-tertiary uppercase tracking-wider">
-                Trigger confidence
-              </p>
-              <p className="text-text-secondary mt-0.5">
-                {enrichment.stationDistance}km from {enrichment.nearestStation.name} station
-              </p>
+          <div className="p-3 bg-bg-tertiary/50 rounded-lg mb-5 text-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-text-tertiary uppercase tracking-wider">
+                  Trigger confidence
+                </p>
+                <p className="text-text-secondary mt-0.5">
+                  {enrichment.stationDistance}km from {enrichment.nearestStation.name} station
+                </p>
+              </div>
+              <span
+                className={`font-mono text-lg font-bold ${
+                  enrichment.basisRiskConfidence >= 0.85
+                    ? "text-success-green"
+                    : enrichment.basisRiskConfidence >= 0.65
+                      ? "text-accent-amber"
+                      : "text-danger-red"
+                }`}
+              >
+                {Math.round(enrichment.basisRiskConfidence * 100)}%
+              </span>
             </div>
-            <span
-              className={`font-mono text-lg font-bold ${
-                enrichment.basisRiskConfidence >= 0.85
-                  ? "text-success-green"
-                  : enrichment.basisRiskConfidence >= 0.65
-                    ? "text-accent-amber"
-                    : "text-danger-red"
-              }`}
-            >
-              {Math.round(enrichment.basisRiskConfidence * 100)}%
-            </span>
+            <p className="text-text-tertiary leading-relaxed">
+              Probability that the reference station accurately reflects conditions at your field.
+              Distance and elevation difference are the primary risk factors.
+            </p>
           </div>
         )}
 
