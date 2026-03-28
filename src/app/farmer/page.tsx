@@ -210,27 +210,27 @@ export default function FarmerPage() {
       <AnimatePresence>
         {weatherOpen && (
           <motion.div
-            className="absolute top-14 left-1/2 -translate-x-1/2 z-40
-                       bg-black/50 backdrop-blur-md border border-white/15 rounded-2xl
+            className="absolute top-16 left-1/2 -translate-x-1/2 z-40 w-44
+                       bg-black/40 backdrop-blur-md border border-white/15 rounded-2xl
                        overflow-hidden shadow-xl"
-            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            initial={{ opacity: 0, y: -6, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
+            exit={{ opacity: 0, y: -6, scale: 0.96 }}
+            transition={{ duration: 0.12 }}
           >
             {([
-              { mode: "none" as OverlayMode, icon: <Layers className="w-4 h-4" />, label: "Off" },
-              { mode: "clouds" as OverlayMode, icon: <Cloud className="w-4 h-4" />, label: "Clouds" },
-              { mode: "radar" as OverlayMode, icon: <CloudRain className="w-4 h-4" />, label: "Radar" },
-              { mode: "temperature" as OverlayMode, icon: <Thermometer className="w-4 h-4" />, label: "Temperature" },
+              { mode: "none" as OverlayMode, icon: <Layers className="w-3.5 h-3.5" />, label: "Off" },
+              { mode: "clouds" as OverlayMode, icon: <Cloud className="w-3.5 h-3.5" />, label: "Clouds" },
+              { mode: "radar" as OverlayMode, icon: <CloudRain className="w-3.5 h-3.5" />, label: "Radar" },
+              { mode: "temperature" as OverlayMode, icon: <Thermometer className="w-3.5 h-3.5" />, label: "Temperature" },
             ]).map(({ mode, icon, label }) => (
               <button
                 key={mode}
                 onClick={() => { setWeatherMode(mode); setWeatherOpen(false); }}
-                className={`w-full flex items-center gap-3 px-5 py-3 text-sm transition-all cursor-pointer
+                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-xs transition-all cursor-pointer
                   ${weatherMode === mode
-                    ? "bg-white/15 text-white"
-                    : "text-white/60 hover:bg-white/8 hover:text-white"
+                    ? "bg-white/12 text-white font-medium"
+                    : "text-white/55 hover:bg-white/8 hover:text-white"
                   }`}
               >
                 {icon}
