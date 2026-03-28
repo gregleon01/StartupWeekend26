@@ -32,7 +32,7 @@ export default function ParcelCropSheet({ hectares, onSelect }: ParcelCropSheetP
       initial={{ y: "100%" }}
       animate={{ y: 0 }}
       exit={{ y: "100%" }}
-      transition={{ type: "spring", damping: 30, stiffness: 300 }}
+      transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
     >
       <div className="bg-white/8 backdrop-blur-xl border-t border-white/12 rounded-t-3xl px-6 pt-5 pb-8">
         <div className="w-10 h-1 bg-text-tertiary/40 rounded-full mx-auto mb-4" />

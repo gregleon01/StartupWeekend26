@@ -282,6 +282,17 @@ export default function FarmerPage() {
         />
       )}
 
+      {/* Crop assignment — separate AnimatePresence so it doesn't fight with other panels */}
+      <AnimatePresence>
+        {state === "ASSIGN_CROP" && (
+          <ParcelCropSheet
+            key="assign"
+            hectares={pendingHectares}
+            onSelect={handleCropAssign}
+          />
+        )}
+      </AnimatePresence>
+
       <AnimatePresence mode="wait">
         {/* Farmer onboarding */}
         {state === "ONBOARDING" && (
@@ -292,15 +303,6 @@ export default function FarmerPage() {
             onNameChange={setFarmerName}
             onAddressChange={setFarmAddress}
             onContinue={() => setState("DRAWING")}
-          />
-        )}
-
-        {/* Crop assignment after polygon drawn */}
-        {state === "ASSIGN_CROP" && (
-          <ParcelCropSheet
-            key="assign"
-            hectares={pendingHectares}
-            onSelect={handleCropAssign}
           />
         )}
 
