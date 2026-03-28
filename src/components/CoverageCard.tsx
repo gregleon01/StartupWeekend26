@@ -1,9 +1,8 @@
 "use client";
 
+import React from "react";
 import { motion } from "framer-motion";
-import { Shield } from "lucide-react";
 import type { ParametricContract, FieldEnrichment, FarmerParcel } from "@/types";
-import { contracts } from "@/lib/contracts";
 import { useLocale } from "@/lib/i18n";
 
 interface CoverageCardProps {
@@ -23,13 +22,139 @@ function formatWindow(start: string, end: string) {
   return `${months[sm - 1]} ${sd} \u2014 ${months[em - 1]} ${ed}`;
 }
 
+interface Tier {
+  name: string;
+  badge?: string;
+  payoutMultiplier: number;
+  premiumMultiplier: number;
+  recommended?: boolean;
+}
+
+const TIERS: Tier[] = [
+  { name: "Basic", payoutMultiplier: 0.7, premiumMultiplier: 0.6 },
+  { name: "Standard", badge: "Recommended", payoutMultiplier: 1, premiumMultiplier: 1, recommended: true },
+  { name: "Premium", badge: "Max Protection", payoutMultiplier: 1.8, premiumMultiplier: 1.5 },
+];
+
+function TierCard({
+  tier,
+  contract,
+  onSimulate,
+  index,
+}: {
+  tier: Tier;
+  contract: ParametricContract;
+  onSimulate: () => void;
+  index: number;
+}) {
+  const { t } = useLocale();
+  const payout = Math.round(contract.payoutPerHectare * tier.payoutMultiplier);
+  const premium = Math.round(contract.premiumPerHectare * tier.premiumMultiplier);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    e.currentTarget.style.transform = `perspective(800px) rotateY(${x * 12}deg) rotateX(${-y * 12}deg)`;
+  };
+  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.currentTarget.style.transform = "perspective(800px) rotateY(0deg) rotateX(0deg)";
+  };
+
+  return (
+    <motion.div
+      className={`flex-1 min-w-0 bg-white/8 backdrop-blur-xl border border-white/12 rounded-2xl p-5 transition-transform duration-150 ease-out cursor-pointer ${
+        tier.recommended ? "ring-1 ring-accent-amber" : ""
+      }`}
+      style={{ transformStyle: "preserve-3d" }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 + index * 0.1, type: "spring", damping: 25, stiffness: 200 }}
+    >
+      {/* Tier header */}
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xl">{contract.icon}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-white font-semibold text-sm">{tier.name}</p>
+          <p className="text-white/40 text-[10px]">{contract.crop}</p>
+        </div>
+        {tier.badge && (
+          <span
+            className={`text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+              tier.recommended
+                ? "bg-accent-amber/20 text-accent-amber"
+                : "bg-white/10 text-white/60"
+            }`}
+          >
+            {tier.badge}
+          </span>
+        )}
+      </div>
+
+      {/* Condition */}
+      <div className="mb-4 space-y-1">
+        <p className="text-white/60 text-xs leading-relaxed">
+          {t("coverage.if")}{" "}
+          <span className="font-mono text-frost-blue font-semibold">
+            {contract.threshold}°C
+          </span>
+        </p>
+        <p className="text-white/60 text-xs leading-relaxed">
+          {t("coverage.for")}{" "}
+          <span className="font-mono text-white font-semibold">
+            {contract.durationThreshold} {t("coverage.hours")}
+          </span>
+        </p>
+        <p className="text-white/60 text-xs leading-relaxed">
+          {t("coverage.during")}{" "}
+          <span className="text-white font-medium">
+            {formatWindow(contract.sensitiveStart, contract.sensitiveEnd)}
+          </span>
+        </p>
+      </div>
+
+      {/* Payout */}
+      <div className="mb-1">
+        <p className="text-white/40 text-[9px] uppercase tracking-widest mb-1">
+          {t("coverage.receive")}
+        </p>
+        <p className="font-mono text-3xl font-bold text-accent-amber leading-none">
+          &euro;{payout}
+          <span className="text-sm text-white/40 font-normal ml-1">/ha</span>
+        </p>
+      </div>
+
+      {/* Premium */}
+      <p className="text-white/60 text-xs mb-5">
+        {t("coverage.premium")}:{" "}
+        <span className="font-mono text-white">
+          &euro;{premium}
+        </span>
+        {t("coverage.perSeason")}
+      </p>
+
+      {/* CTA */}
+      <motion.button
+        onClick={onSimulate}
+        className={`w-full py-3 rounded-xl font-semibold text-sm transition-all cursor-pointer ${
+          tier.recommended
+            ? "bg-accent-amber text-bg-primary hover:brightness-110"
+            : "bg-white/10 text-white hover:bg-white/15"
+        } active:scale-[0.98]`}
+        whileTap={{ scale: 0.98 }}
+      >
+        Select
+      </motion.button>
+    </motion.div>
+  );
+}
+
 export default function CoverageCard({
   contract,
   onSimulate,
-  enrichment,
-  parcels,
 }: CoverageCardProps) {
-  const { t } = useLocale();
   return (
     <motion.div
       className="absolute inset-0 z-30 flex items-center justify-center px-6"
@@ -40,142 +165,18 @@ export default function CoverageCard({
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/35 backdrop-blur-sm" />
 
-      <motion.div
-        className="relative w-full max-w-[400px] bg-white/8 backdrop-blur-2xl border border-white/12 rounded-2xl p-6 shadow-2xl"
-        initial={{ y: 60, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 60, opacity: 0 }}
-        transition={{ type: "spring", damping: 25, stiffness: 200 }}
-      >
-        {/* Crop header */}
-        <div className="flex items-center gap-3 mb-5">
-          <span className="text-3xl">{contract.icon}</span>
-          <div>
-            <p className="text-white font-medium">{contract.crop}</p>
-            <p className="text-white/50 text-xs">{contract.cropBg}</p>
-          </div>
-          <Shield className="w-5 h-5 text-accent-amber ml-auto" />
-        </div>
-
-        {/* Condition */}
-        <div className="mb-6 space-y-1.5">
-          <p className="text-white/70 text-sm leading-relaxed">
-            {t("coverage.if")}{" "}
-            <span className="font-mono text-frost-blue font-semibold">
-              {contract.threshold}°C
-            </span>
-          </p>
-          <p className="text-white/70 text-sm leading-relaxed">
-            {t("coverage.for")}{" "}
-            <span className="font-mono text-white font-semibold">
-              {contract.durationThreshold} {t("coverage.hours")}
-            </span>
-          </p>
-          <p className="text-white/70 text-sm leading-relaxed">
-            {t("coverage.during")}{" "}
-            <span className="text-white font-medium">
-              {formatWindow(contract.sensitiveStart, contract.sensitiveEnd)}
-            </span>
-          </p>
-        </div>
-
-        {/* Payout amount — the star */}
-        <div className="mb-1">
-          <p className="text-white/50 text-xs uppercase tracking-widest mb-1">
-            {t("coverage.receive")}
-          </p>
-          <p className="font-mono text-5xl font-bold text-accent-amber leading-none">
-            &euro;{contract.payoutPerHectare}
-            <span className="text-lg text-white/50 font-normal ml-1">
-              /ha
-            </span>
-          </p>
-        </div>
-
-        {/* Premium */}
-        <p className="text-white/70 text-sm mb-4">
-          {t("coverage.premium")}:{" "}
-          <span className="font-mono text-white">
-            &euro;{contract.premiumPerHectare}
-          </span>
-          {t("coverage.perSeason")}
-        </p>
-
-        {/* Basis risk confidence */}
-        {enrichment && (
-          <div className="p-3 bg-white/6 border border-white/8 rounded-lg mb-5 text-xs space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-white/50 uppercase tracking-wider">
-                  {t("coverage.confidence")}
-                </p>
-                <p className="text-white/70 mt-0.5">
-                  {enrichment.stationDistance}km from {enrichment.nearestStation.name} station
-                </p>
-              </div>
-              <span
-                className={`font-mono text-lg font-bold ${
-                  enrichment.basisRiskConfidence >= 0.85
-                    ? "text-success-green"
-                    : enrichment.basisRiskConfidence >= 0.65
-                      ? "text-accent-amber"
-                      : "text-danger-red"
-                }`}
-              >
-                {Math.round(enrichment.basisRiskConfidence * 100)}%
-              </span>
-            </div>
-            <p className="text-white/50 leading-relaxed">
-              {t("coverage.confidenceDesc")}
-            </p>
-          </div>
-        )}
-
-        {/* Multi-parcel portfolio breakdown */}
-        {parcels && parcels.length > 1 && (
-          <div className="mb-5 p-3 bg-white/6 border border-white/8 rounded-lg space-y-2">
-            <p className="text-white/50 text-[9px] uppercase tracking-widest mb-2">
-              {t("coverage.allFields")}
-            </p>
-            {parcels.map((p) => {
-              const c = contracts[p.crop];
-              return (
-                <div key={p.id} className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1.5 text-white/70">
-                    <span>{c.icon}</span>
-                    <span>{p.hectares} ha</span>
-                  </span>
-                  <span className="font-mono text-white">
-                    €{Math.round(c.payoutPerHectare * p.hectares).toLocaleString()}
-                  </span>
-                </div>
-              );
-            })}
-            <div className="border-t border-white/10 pt-2 flex justify-between text-xs">
-              <span className="text-white/50">{t("coverage.totalPayout")}</span>
-              <span className="font-mono font-bold text-accent-amber">
-                €{parcels.reduce((s, p) => s + Math.round(contracts[p.crop].payoutPerHectare * p.hectares), 0).toLocaleString()}
-              </span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-white/50">{t("coverage.totalPremium")}</span>
-              <span className="font-mono text-white/70">
-                €{parcels.reduce((s, p) => s + Math.round(contracts[p.crop].premiumPerHectare * p.hectares), 0).toLocaleString()}/season
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* CTA */}
-        <motion.button
-          onClick={onSimulate}
-          className="w-full py-4 bg-accent-amber text-bg-primary rounded-xl font-semibold text-base
-                     hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
-          whileTap={{ scale: 0.98 }}
-        >
-          {t("coverage.simulate")}
-        </motion.button>
-      </motion.div>
+      {/* Tier cards */}
+      <div className="relative flex items-stretch gap-4 max-w-[900px] w-full">
+        {TIERS.map((tier, i) => (
+          <TierCard
+            key={tier.name}
+            tier={tier}
+            contract={contract}
+            onSimulate={onSimulate}
+            index={i}
+          />
+        ))}
+      </div>
     </motion.div>
   );
 }

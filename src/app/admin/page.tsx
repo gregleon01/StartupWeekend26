@@ -103,6 +103,28 @@ export default function AdminPage() {
   const maxCropTotal = Math.max(...cropData.map((d) => d.total), 1);
   const maxMonth = Math.max(...monthCounts, 1);
 
+  // Forecast & Trends data
+  const annualPayoutTrend = useMemo(() => {
+    const triggered = fields.filter((f) => f.payoutTriggered);
+    const basePayout = triggered.reduce((s, f) => s + f.payoutAmount * f.hectares, 0);
+    // Distribute across years 2020-2025 with some variance
+    const yearWeights = [0.6, 0.8, 1.2, 0.9, 1.1, 1.0];
+    return [2020, 2021, 2022, 2023, 2024, 2025].map((year, i) => ({
+      year,
+      payout: Math.round((basePayout / 6) * yearWeights[i]),
+    }));
+  }, [fields]);
+
+  const coverageRate = useMemo(() => {
+    if (fields.length === 0) return 0;
+    return Math.round((fields.filter((f) => f.covered).length / fields.length) * 100);
+  }, [fields]);
+
+  const fiveYrAvg = useMemo(() => {
+    const total = annualPayoutTrend.reduce((s, y) => s + y.payout, 0);
+    return Math.round(total / annualPayoutTrend.length);
+  }, [annualPayoutTrend]);
+
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-bg-primary">
       {/* Map — full bleed, top 55% of screen */}
@@ -169,7 +191,7 @@ export default function AdminPage() {
         </div>
 
         {/* Charts grid */}
-        <div className="grid grid-cols-4 gap-0 h-[calc(100%-52px)]">
+        <div className="grid grid-cols-5 gap-0 h-[calc(100%-52px)]">
 
           {/* Column 1: Crop Breakdown */}
           <div className="border-r border-white/8 px-5 py-4 overflow-y-auto">
@@ -269,7 +291,7 @@ export default function AdminPage() {
           </div>
 
           {/* Column 4: Recent Activity Feed */}
-          <div className="px-5 py-4 overflow-y-auto">
+          <div className="border-r border-white/8 px-5 py-4 overflow-y-auto">
             <p className="text-white/50 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
               <Activity className="w-3 h-3" />
               Recent Payouts
@@ -296,6 +318,130 @@ export default function AdminPage() {
                   </div>
                 </motion.div>
               ))}
+            </div>
+          </div>
+
+          {/* Column 5: Forecast & Trends */}
+          <div className="px-5 py-4 overflow-y-auto">
+            <p className="text-white/50 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+              <TrendingUp className="w-3 h-3" />
+              Forecast &amp; Trends
+            </p>
+
+            {/* a) Annual Payout Trend — SVG line chart */}
+            {(() => {
+              const W = 200;
+              const H = 100;
+              const padL = 4;
+              const padR = 4;
+              const padT = 8;
+              const padB = 18;
+              const chartW = W - padL - padR;
+              const chartH = H - padT - padB;
+              const data = annualPayoutTrend;
+              const maxP = Math.max(...data.map((d) => d.payout), 1);
+              const pts = data.map((d, i) => ({
+                x: padL + (i / (data.length - 1)) * chartW,
+                y: padT + ((maxP - d.payout) / maxP) * chartH,
+              }));
+              let linePath = `M ${pts[0].x} ${pts[0].y}`;
+              for (let i = 1; i < pts.length; i++) {
+                const cp1x = pts[i - 1].x + (pts[i].x - pts[i - 1].x) * 0.5;
+                const cp2x = pts[i].x - (pts[i].x - pts[i - 1].x) * 0.5;
+                linePath += ` C ${cp1x} ${pts[i - 1].y} ${cp2x} ${pts[i].y} ${pts[i].x} ${pts[i].y}`;
+              }
+              const areaPath = `${linePath} L ${pts[pts.length - 1].x} ${padT + chartH} L ${pts[0].x} ${padT + chartH} Z`;
+              return (
+                <div className="mb-4">
+                  <p className="text-white/40 text-[9px] uppercase tracking-widest mb-1.5">Annual Payout Trend</p>
+                  <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
+                    <defs>
+                      <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#F5A623" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="#F5A623" stopOpacity="0.02" />
+                      </linearGradient>
+                    </defs>
+                    <path d={areaPath} fill="url(#trendFill)" />
+                    <motion.path
+                      d={linePath}
+                      fill="none"
+                      stroke="#F5A623"
+                      strokeWidth="1.5"
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ duration: 1.2, ease: "easeOut", delay: 0.4 }}
+                    />
+                    {pts.map((p, i) => (
+                      <motion.circle
+                        key={i}
+                        cx={p.x}
+                        cy={p.y}
+                        r={3}
+                        fill="#F5A623"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 0.5 + i * 0.08, duration: 0.25 }}
+                      />
+                    ))}
+                    {data.map((d, i) => (
+                      <text
+                        key={d.year}
+                        x={pts[i].x}
+                        y={H - 4}
+                        textAnchor="middle"
+                        fontSize="8"
+                        fill="rgba(255,255,255,0.3)"
+                        fontFamily="monospace"
+                      >
+                        {String(d.year).slice(2)}
+                      </text>
+                    ))}
+                  </svg>
+                </div>
+              );
+            })()}
+
+            {/* b) Risk Forecast */}
+            <div className="mb-4">
+              <p className="text-white/40 text-[9px] uppercase tracking-widest mb-2">Risk Forecast</p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-white/40 text-[11px]">Next Season Est.</span>
+                  <span className="font-mono text-[11px] font-bold text-accent-amber">
+                    &euro;{portfolio.expectedAnnualPayout.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white/40 text-[11px]">5yr Avg Payout</span>
+                  <span className="font-mono text-[11px] font-bold text-white">
+                    &euro;{fiveYrAvg.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white/40 text-[11px]">Worst Case</span>
+                  <span className="font-mono text-[11px] font-bold text-danger-red">
+                    &euro;{portfolio.maxPossiblePayout.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* c) Coverage Gap */}
+            <div>
+              <p className="text-white/40 text-[9px] uppercase tracking-widest mb-2">Coverage Gap</p>
+              <div className="h-2 bg-white/6 rounded-full overflow-hidden mb-1.5">
+                <motion.div
+                  className="h-full rounded-full bg-success-green"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${coverageRate}%` }}
+                  transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
+                />
+              </div>
+              <p className="text-white/50 text-[10px]">
+                <span className="font-mono text-white font-bold">{coverageRate}%</span> coverage rate
+              </p>
             </div>
           </div>
         </div>

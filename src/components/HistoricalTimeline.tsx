@@ -171,13 +171,16 @@ export default function HistoricalTimeline({
   if (loading) {
     return (
       <motion.div
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-[340px] bg-white/8 backdrop-blur-2xl border border-white/12 rounded-2xl p-5"
-        initial={{ opacity: 0, x: 40 }}
-        animate={{ opacity: 1, x: 0 }}
+        className="absolute inset-0 z-20 flex items-center justify-center px-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
       >
-        <div className="flex items-center gap-3 py-8 justify-center">
-          <div className="w-5 h-5 border-2 border-accent-amber border-t-transparent rounded-full animate-spin" />
-          <span className="text-white/70 text-sm">Loading 10 years of data…</span>
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+        <div className="relative w-full max-w-[500px] bg-white/8 backdrop-blur-2xl border border-white/12 rounded-2xl p-5">
+          <div className="flex items-center gap-3 py-8 justify-center">
+            <div className="w-5 h-5 border-2 border-accent-amber border-t-transparent rounded-full animate-spin" />
+            <span className="text-white/70 text-sm">Loading 10 years of data…</span>
+          </div>
         </div>
       </motion.div>
     );
@@ -185,13 +188,14 @@ export default function HistoricalTimeline({
 
   return (
     <motion.div
-      className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-[340px]"
-      initial={{ opacity: 0, x: 40 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 40 }}
+      className="absolute inset-0 z-20 flex items-center justify-center px-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
     >
-      <div className="bg-white/8 backdrop-blur-2xl border border-white/12 rounded-2xl overflow-hidden shadow-2xl">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+      <div className="relative w-full max-w-[500px] bg-white/8 backdrop-blur-2xl border border-white/12 rounded-2xl overflow-hidden shadow-2xl">
 
         {/* Header */}
         <div className="px-5 pt-5 pb-3 border-b border-white/10">
