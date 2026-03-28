@@ -16,7 +16,7 @@ type SimPhase = "darkening" | "coldfront" | "tempdrop" | "counting" | "payout";
 
 export default function FrostSimulation({ contract }: FrostSimulationProps) {
   const [phase, setPhase] = useState<SimPhase>("darkening");
-  const [temperature, setTemperature] = useState(4);
+  const [temperature, setTemperature] = useState(4.2); // Real start: 4.2°C at sunset
   const [breachHours, setBreachHours] = useState(0);
   const [showGauge, setShowGauge] = useState(false);
   const [showColdFront, setShowColdFront] = useState(false);
@@ -26,7 +26,8 @@ export default function FrostSimulation({ contract }: FrostSimulationProps) {
   const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [showVignette, setShowVignette] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
-  const [minTemp, setMinTemp] = useState(4);
+  const [minTemp, setMinTemp] = useState(4.2);
+  const [simTime, setSimTime] = useState(""); // Current timestamp label
 
   const simData = useRef(generateSimulationData(contract));
   const animFrame = useRef(0);
@@ -63,72 +64,74 @@ export default function FrostSimulation({ contract }: FrostSimulationProps) {
       setShowColdFront(false);
     }, 4000);
 
-    // Phase 3: Temperature drop (4–8s)
-    // Animate through the first 12 data points (cooling + breach start)
+    // Phase 3: Temperature drop (4–12s)
+    // Step through all 19 real data points from the Kyustendil 2025 event
+    // Apr 7 18:00 (4.2°C) → Apr 8 06:00 (-3.1°C) → Apr 8 12:00 (6.2°C)
     schedule(() => {
       setPhase("tempdrop");
-      const dropPoints = data.slice(0, 12); // 4h cooling + 8h breach
-      const interval = 4000 / dropPoints.length; // ~333ms each
+      const interval = 8000 / data.length; // ~420ms per hour
       let idx = 0;
+      let hoursBelow = 0;
+      let triggered = false;
 
       const stepTemp = () => {
-        if (idx >= dropPoints.length) return;
-        const temp = dropPoints[idx].temperature;
+        if (idx >= data.length) return;
+        const point = data[idx];
+        const temp = point.temperature;
+
+        // Format time label: "Apr 7, 22:00" from "2025-04-07T22:00"
+        const d = new Date(point.time);
+        const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
+          ", " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+        setSimTime(label);
         setTemperature(temp);
         setMinTemp((prev) => Math.min(prev, temp));
 
-        // Check threshold crossing
-        if (temp < threshold && !breached) {
-          setBreached(true);
-          setShowVignette(true);
-          setTimeout(() => setShowVignette(false), 500);
+        // Track threshold crossing
+        if (temp < threshold) {
+          if (!breached) {
+            setBreached(true);
+            setShowVignette(true);
+            setTimeout(() => setShowVignette(false), 500);
+          }
+          hoursBelow++;
+          setBreachHours(hoursBelow);
+
+          // Check trigger
+          if (hoursBelow >= contract.durationThreshold && !triggered) {
+            triggered = true;
+            setTriggerFired(true);
+            setPhase("counting");
+            setShowFlash(true);
+            setTimeout(() => setShowFlash(false), 100);
+          }
         }
 
         idx++;
-        if (idx < dropPoints.length) {
+        if (idx < data.length) {
           timeouts.current.push(setTimeout(stepTemp, interval));
+        } else {
+          // All points done → show payout
+          timeouts.current.push(setTimeout(() => {
+            setPhase("payout");
+            setShowGauge(false);
+            setShowPayout(true);
+          }, 1500));
         }
       };
 
       stepTemp();
     }, 4000);
 
-    // Phase 4: Duration counter (8–11s)
-    schedule(() => {
-      setPhase("counting");
-      setBreached(true);
-
-      // Count up hours
-      for (let h = 1; h <= contract.durationThreshold; h++) {
-        schedule(() => {
-          setBreachHours(h);
-
-          if (h >= contract.durationThreshold) {
-            // TRIGGER FIRED
-            setTriggerFired(true);
-            setShowFlash(true);
-            setTimeout(() => setShowFlash(false), 100);
-          }
-        }, h * 600);
-      }
-    }, 8000);
-
-    // Phase 5: Payout (11–13s)
-    schedule(() => {
-      setPhase("payout");
-      setShowGauge(false);
-      setShowPayout(true);
-    }, 11500);
-
-    // WhatsApp notification 1s after payout card
+    // WhatsApp notification 2s after payout card appears
     schedule(() => {
       setShowWhatsApp(true);
-    }, 12500);
+    }, 15500);
 
     // Auto-dismiss WhatsApp after 5s
     schedule(() => {
       setShowWhatsApp(false);
-    }, 17500);
+    }, 20500);
   }, [contract, schedule, breached]);
 
   return (
@@ -220,6 +223,9 @@ export default function FrostSimulation({ contract }: FrostSimulationProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
           >
+            {simTime && (
+              <p className="text-frost-blue text-xs font-mono mb-2">{simTime}</p>
+            )}
             <p className="text-text-tertiary text-xs uppercase tracking-wider mb-1">
               Hours below {contract.threshold}°C
             </p>
