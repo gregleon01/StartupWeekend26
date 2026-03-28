@@ -2,13 +2,15 @@
 
 import { motion } from "framer-motion";
 import { Shield } from "lucide-react";
-import type { ParametricContract, FieldEnrichment } from "@/types";
+import type { ParametricContract, FieldEnrichment, FarmerParcel } from "@/types";
+import { contracts } from "@/lib/contracts";
 import { useLocale } from "@/lib/i18n";
 
 interface CoverageCardProps {
   contract: ParametricContract;
   onSimulate: () => void;
   enrichment?: FieldEnrichment | null;
+  parcels?: FarmerParcel[];
 }
 
 function formatWindow(start: string, end: string) {
@@ -25,6 +27,7 @@ export default function CoverageCard({
   contract,
   onSimulate,
   enrichment,
+  parcels,
 }: CoverageCardProps) {
   const { t } = useLocale();
   return (
@@ -125,6 +128,41 @@ export default function CoverageCard({
             <p className="text-text-tertiary leading-relaxed">
               {t("coverage.confidenceDesc")}
             </p>
+          </div>
+        )}
+
+        {/* Multi-parcel portfolio breakdown */}
+        {parcels && parcels.length > 1 && (
+          <div className="mb-5 p-3 bg-bg-tertiary/50 rounded-lg space-y-2">
+            <p className="text-text-tertiary text-[9px] uppercase tracking-widest mb-2">
+              {t("coverage.allFields")}
+            </p>
+            {parcels.map((p) => {
+              const c = contracts[p.crop];
+              return (
+                <div key={p.id} className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1.5 text-text-secondary">
+                    <span>{c.icon}</span>
+                    <span>{p.hectares} ha</span>
+                  </span>
+                  <span className="font-mono text-text-primary">
+                    €{Math.round(c.payoutPerHectare * p.hectares).toLocaleString()}
+                  </span>
+                </div>
+              );
+            })}
+            <div className="border-t border-border-subtle pt-2 flex justify-between text-xs">
+              <span className="text-text-tertiary">{t("coverage.totalPayout")}</span>
+              <span className="font-mono font-bold text-accent-amber">
+                €{parcels.reduce((s, p) => s + Math.round(contracts[p.crop].payoutPerHectare * p.hectares), 0).toLocaleString()}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-text-tertiary">{t("coverage.totalPremium")}</span>
+              <span className="font-mono text-text-secondary">
+                €{parcels.reduce((s, p) => s + Math.round(contracts[p.crop].premiumPerHectare * p.hectares), 0).toLocaleString()}/season
+              </span>
+            </div>
           </div>
         )}
 

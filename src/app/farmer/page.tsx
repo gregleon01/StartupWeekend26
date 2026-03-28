@@ -202,6 +202,7 @@ export default function FarmerPage() {
             contract={contract}
             onSimulate={handleSimulate}
             enrichment={enrichment}
+            parcels={parcels}
           />
         )}
       </AnimatePresence>

@@ -46,6 +46,9 @@ export const translations = {
     "coverage.perSeason": "/ха на сезон",
     "coverage.confidence": "Увереност на тригера",
     "coverage.confidenceDesc": "Вероятност, че референтната станция точно отразява условията на вашето поле.",
+    "coverage.allFields": "Всички полета",
+    "coverage.totalPayout": "Общо изплащане",
+    "coverage.totalPremium": "Обща премия",
     "coverage.simulate": "Симулирай замръзване",
 
     // Simulation
@@ -92,6 +95,9 @@ export const translations = {
     "coverage.perSeason": "/ha per season",
     "coverage.confidence": "Trigger confidence",
     "coverage.confidenceDesc": "Probability that the reference station accurately reflects conditions at your field.",
+    "coverage.allFields": "All fields",
+    "coverage.totalPayout": "Total max payout",
+    "coverage.totalPremium": "Total premium",
     "coverage.simulate": "Simulate Frost Event",
 
     "sim.title": "Frost Event Simulation",
