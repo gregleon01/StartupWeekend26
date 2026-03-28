@@ -97,14 +97,10 @@ export default function ParcelCropSheet({ hectares, onSelect }: ParcelCropSheetP
           })}
         </div>
 
-        {/* Contract detail preview on hover */}
-        <motion.div
-          className="max-w-md mx-auto mt-4 overflow-hidden"
-          animate={{ height: hovered ? 52 : 0, opacity: hovered ? 1 : 0 }}
-          transition={{ duration: 0.15 }}
-        >
-          {hovered && (
-            <div className="flex items-center justify-center gap-5 text-[11px] text-white/50 py-2">
+        {/* Contract detail preview — fixed height, no layout shift */}
+        <div className="max-w-md mx-auto mt-4 h-[36px] flex items-center justify-center">
+          {hovered ? (
+            <div className="flex items-center justify-center gap-5 text-[11px] text-white/50">
               <span className="flex items-center gap-1">
                 <Thermometer className="w-3 h-3" />
                 {hovered.triggerDirection === "below" ? "<" : ">"} {hovered.threshold}{hovered.thresholdUnit}
@@ -122,8 +118,12 @@ export default function ParcelCropSheet({ hectares, onSelect }: ParcelCropSheetP
                 €{hovered.payoutPerHectare}/ha
               </span>
             </div>
+          ) : (
+            <p className="text-white/25 text-[11px]">
+              {locale === "bg" ? "Задръжте за детайли" : "Hover for details"}
+            </p>
           )}
-        </motion.div>
+        </div>
       </div>
     </motion.div>
   );
