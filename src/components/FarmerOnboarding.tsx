@@ -44,10 +44,10 @@ export default function FarmerOnboarding({
       >
         {/* Header */}
         <div className="text-center mb-6">
-          <p className="text-text-primary text-lg font-semibold">
+          <p className="text-white text-lg font-semibold">
             {locale === "bg" ? "Здравейте!" : "Welcome!"}
           </p>
-          <p className="text-text-secondary text-sm mt-1">
+          <p className="text-white/70 text-sm mt-1">
             {locale === "bg"
               ? "Кажете ни за вашето стопанство"
               : "Tell us about your farm"}
@@ -58,7 +58,7 @@ export default function FarmerOnboarding({
         <div className="space-y-4">
           {/* Name */}
           <div>
-            <label className="text-text-tertiary text-xs uppercase tracking-wider block mb-1.5">
+            <label className="text-white/50 text-xs uppercase tracking-wider block mb-1.5">
               {locale === "bg" ? "Вашето име" : "Your name"}
             </label>
             <div
@@ -68,7 +68,7 @@ export default function FarmerOnboarding({
                   : "border-white/10"
               }`}
             >
-              <User className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+              <User className="w-4 h-4 text-white/40 flex-shrink-0" />
               <input
                 type="text"
                 value={name}
@@ -76,16 +76,16 @@ export default function FarmerOnboarding({
                 onFocus={() => setFocused("name")}
                 onBlur={() => setFocused(null)}
                 placeholder={locale === "bg" ? "Иван Петров" : "Ivan Petrov"}
-                className="flex-1 bg-transparent text-text-primary text-sm outline-none placeholder:text-text-tertiary/50"
+                className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-white/30"
               />
             </div>
           </div>
 
           {/* Address */}
           <div>
-            <label className="text-text-tertiary text-xs uppercase tracking-wider block mb-1.5">
+            <label className="text-white/50 text-xs uppercase tracking-wider block mb-1.5">
               {locale === "bg" ? "Адрес на стопанството" : "Farm address"}
-              <span className="text-text-tertiary/50 ml-1 normal-case tracking-normal">
+              <span className="text-white/30 ml-1 normal-case tracking-normal">
                 ({locale === "bg" ? "по избор" : "optional"})
               </span>
             </label>
@@ -96,7 +96,7 @@ export default function FarmerOnboarding({
                   : "border-white/10"
               }`}
             >
-              <MapPin className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+              <MapPin className="w-4 h-4 text-white/40 flex-shrink-0" />
               <input
                 type="text"
                 value={address}
@@ -104,14 +104,14 @@ export default function FarmerOnboarding({
                 onFocus={() => setFocused("address")}
                 onBlur={() => setFocused(null)}
                 placeholder={locale === "bg" ? "с. Граница, Кюстендил" : "Granitsa, Kyustendil"}
-                className="flex-1 bg-transparent text-text-primary text-sm outline-none placeholder:text-text-tertiary/50"
+                className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-white/30"
               />
             </div>
           </div>
         </div>
 
         {/* Info */}
-        <p className="text-text-tertiary text-xs mt-4 leading-relaxed text-center">
+        <p className="text-white/40 text-xs mt-4 leading-relaxed text-center">
           {locale === "bg"
             ? "След това ще начертаете полетата си на картата и ще изберете култура за всяко."
             : "Next, you'll draw your fields on the map and assign a crop to each one."}
@@ -125,7 +125,7 @@ export default function FarmerOnboarding({
                      transition-all cursor-pointer ${
                        canContinue
                          ? "bg-accent-amber text-bg-primary hover:brightness-110"
-                         : "bg-white/6 text-text-tertiary cursor-not-allowed"
+                         : "bg-white/6 text-white/30 cursor-not-allowed"
                      }`}
           whileTap={canContinue ? { scale: 0.98 } : undefined}
         >
