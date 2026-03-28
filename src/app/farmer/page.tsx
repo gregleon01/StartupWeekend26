@@ -68,9 +68,8 @@ export default function FarmerPage() {
     [pendingCoords, pendingHectares],
   );
 
-  // Add another field — stay in PARCELS (drawing is still enabled)
   const handleAddMore = useCallback(() => {
-    setState("PARCELS");
+    setState("DRAWING");
   }, []);
 
   // Continue to coverage analysis — use the first/largest parcel
