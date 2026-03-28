@@ -100,9 +100,9 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Stats row — floating pill at top */}
-      <div className="absolute top-16 left-1/2 -translate-x-1/2 z-40">
-        <div className="flex items-center gap-5 px-6 py-2.5 bg-white/8 backdrop-blur-xl border border-white/12 rounded-full shadow-xl">
+      {/* Stats row — floating pill, offset left to avoid sidebar */}
+      <div className="absolute top-16 left-4 z-40">
+        <div className="flex items-center gap-4 px-5 py-2.5 bg-white/8 backdrop-blur-xl border border-white/12 rounded-full shadow-xl">
           <StatPill icon={<MapPin className="w-3.5 h-3.5" />} value={animFields} label="Fields" />
           <div className="w-px h-4 bg-white/12" />
           <StatPill icon={<TrendingUp className="w-3.5 h-3.5" />} value={animHa} label="ha" />
@@ -117,7 +117,7 @@ export default function AdminPage() {
 
       {/* Right sidebar — floating glass panel */}
       <motion.div
-        className="absolute top-4 right-4 bottom-4 w-[320px] z-20
+        className="absolute top-4 right-4 bottom-4 w-[320px] z-30
                    bg-white/8 backdrop-blur-xl border border-white/12 rounded-2xl
                    overflow-hidden shadow-xl flex flex-col"
         initial={{ x: 340, opacity: 0 }}

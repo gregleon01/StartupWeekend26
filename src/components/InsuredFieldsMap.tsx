@@ -147,8 +147,8 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
         </Source>
       </Map>
 
-      {/* Color mode toggle */}
-      <div className="absolute top-4 right-4 z-50 flex gap-1 bg-white/8 backdrop-blur-xl border border-white/12 rounded-lg p-1 text-xs pointer-events-auto">
+      {/* Color mode toggle — offset from right to avoid sidebar overlap */}
+      <div className="absolute top-4 right-[340px] z-50 flex gap-1 bg-white/8 backdrop-blur-xl border border-white/12 rounded-full p-1 text-xs pointer-events-auto shadow-xl">
         <button
           onClick={() => setColorMode("risk")}
           className={`px-3 py-1.5 rounded transition-colors ${
