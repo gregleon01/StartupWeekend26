@@ -45,6 +45,7 @@ export default function FarmerPage() {
   const [enrichment, setEnrichment] = useState<FieldEnrichment | null>(null);
 
   const [flyToCoords, setFlyToCoords] = useState<[number, number] | null>(null);
+  const [selectedParcelIndex, setSelectedParcelIndex] = useState(0);
 
   const weather = useWeatherData();
   const [weatherMode, setWeatherMode] = useState<OverlayMode>("none");
@@ -114,6 +115,27 @@ export default function FarmerPage() {
     enrichField(mostValuable.centroid).then(setEnrichment);
     weather.fetchAndAnalyze(mostValuable.centroid.lat, mostValuable.centroid.lng, c);
   }, [parcels, weather]);
+
+  // Navigate between parcels in the info bar
+  const handlePrevParcel = useCallback(() => {
+    setSelectedParcelIndex((i) => {
+      const next = (i - 1 + parcels.length) % parcels.length;
+      const p = parcels[next];
+      setFlyToCoords([p.centroid.lng, p.centroid.lat]);
+      enrichField(p.centroid).then(setEnrichment);
+      return next;
+    });
+  }, [parcels]);
+
+  const handleNextParcel = useCallback(() => {
+    setSelectedParcelIndex((i) => {
+      const next = (i + 1) % parcels.length;
+      const p = parcels[next];
+      setFlyToCoords([p.centroid.lng, p.centroid.lat]);
+      enrichField(p.centroid).then(setEnrichment);
+      return next;
+    });
+  }, [parcels]);
 
   // Remove a parcel
   const handleRemove = useCallback((id: string) => {
@@ -282,8 +304,15 @@ export default function FarmerPage() {
       </AnimatePresence>
 
       {/* Field info bar — shown in PARCELS (your fields) state */}
-      {enrichment && state === "PARCELS" && (
-        <FieldInfoBar pin={parcels[0]?.centroid ?? { lat: 0, lng: 0 }} enrichment={enrichment} />
+      {enrichment && state === "PARCELS" && parcels.length > 0 && (
+        <FieldInfoBar
+          pin={parcels[selectedParcelIndex]?.centroid ?? parcels[0].centroid}
+          enrichment={enrichment}
+          parcelIndex={selectedParcelIndex}
+          parcelTotal={parcels.length}
+          onPrev={handlePrevParcel}
+          onNext={handleNextParcel}
+        />
       )}
 
       {/* Parcel sidebar — visible only in PARCELS state (drawing still works on the map) */}
