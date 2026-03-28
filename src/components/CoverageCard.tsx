@@ -162,10 +162,9 @@ export default function CoverageCard({
   onSimulate,
   parcels,
 }: CoverageCardProps) {
-  const [selectedTier, setSelectedTier] = React.useState<number>(1);
-  const [cropTabIndex, setCropTabIndex] = React.useState<number>(0);
+  const { locale } = useLocale();
 
-  // Derive unique contracts from parcels, falling back to the single contract
+  // Derive unique contracts from parcels
   const uniqueContracts: ParametricContract[] = React.useMemo(() => {
     if (!parcels || parcels.length === 0) return [contract];
     const seen = new Set<string>();
@@ -179,11 +178,25 @@ export default function CoverageCard({
     return result;
   }, [parcels, contract]);
 
-  const activeContract = uniqueContracts[cropTabIndex] ?? contract;
+  const [step, setStep] = React.useState(0);
+  const [selectedTier, setSelectedTier] = React.useState<number>(1);
+
+  const activeContract = uniqueContracts[step] ?? contract;
+  const isLast = step === uniqueContracts.length - 1;
+  const total = uniqueContracts.length;
+
+  const advance = () => {
+    if (isLast) {
+      onSimulate();
+    } else {
+      setStep((s) => s + 1);
+      setSelectedTier(1);
+    }
+  };
 
   return (
     <motion.div
-      className="absolute inset-0 z-30 flex flex-col items-center justify-center px-6 gap-4"
+      className="absolute inset-0 z-30 flex flex-col items-center justify-center px-6 gap-5"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -191,40 +204,58 @@ export default function CoverageCard({
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/35 backdrop-blur-sm" />
 
-      {/* Crop tabs — only when multiple crops */}
-      {uniqueContracts.length > 1 && (
-        <div className="relative flex gap-2">
+      {/* Step indicator */}
+      {total > 1 && (
+        <div className="relative flex items-center gap-3">
           {uniqueContracts.map((c, i) => (
-            <button
+            <div
               key={c.crop}
-              onClick={() => { setCropTabIndex(i); setSelectedTier(1); }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer outline-none
-                ${cropTabIndex === i
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all
+                ${i === step
                   ? "bg-accent-amber text-bg-primary"
-                  : "bg-white/8 backdrop-blur-xl border border-white/12 text-white/70 hover:text-white"
+                  : i < step
+                    ? "bg-white/16 text-white/60"
+                    : "bg-white/8 border border-white/12 text-white/40"
                 }`}
             >
               <span>{c.icon}</span>
               {c.crop}
-            </button>
+              {i < step && <span className="ml-1 text-xs">✓</span>}
+            </div>
           ))}
         </div>
       )}
 
       {/* Tier cards */}
-      <div className="relative flex items-stretch gap-4 max-w-[900px] w-full">
+      <motion.div
+        key={step}
+        className="relative flex items-stretch gap-4 max-w-[900px] w-full"
+        initial={{ opacity: 0, x: 30 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.2 }}
+      >
         {TIERS.map((tier, i) => (
           <TierCard
             key={`${activeContract.crop}-${tier.name}`}
             tier={tier}
             contract={activeContract}
-            onSimulate={onSimulate}
+            onSimulate={advance}
             index={i}
             selected={selectedTier === i}
             onSelect={() => setSelectedTier(i)}
           />
         ))}
-      </div>
+      </motion.div>
+
+      {/* No insurance option */}
+      <button
+        onClick={advance}
+        className="relative text-white/35 text-xs hover:text-white/60 transition-colors cursor-pointer underline underline-offset-2 outline-none"
+      >
+        {locale === "bg"
+          ? `Не искам застраховка за ${activeContract.crop}`
+          : `I don't want insurance for ${activeContract.crop}`}
+      </button>
     </motion.div>
   );
 }
