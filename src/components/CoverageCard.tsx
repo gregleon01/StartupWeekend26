@@ -35,10 +35,10 @@ export default function CoverageCard({
       exit={{ opacity: 0 }}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/35 backdrop-blur-sm" />
 
       <motion.div
-        className="relative w-full max-w-[400px] bg-bg-secondary border border-border-subtle rounded-2xl p-6 shadow-2xl"
+        className="relative w-full max-w-[400px] bg-bg-secondary/80 backdrop-blur-2xl border border-border-subtle rounded-2xl p-6 shadow-2xl"
         initial={{ y: 60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 60, opacity: 0 }}

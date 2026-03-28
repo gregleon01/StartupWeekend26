@@ -171,7 +171,7 @@ export default function HistoricalTimeline({
   if (loading) {
     return (
       <motion.div
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-[340px] bg-bg-secondary/95 backdrop-blur-xl border border-border-subtle rounded-2xl p-5"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-[340px] bg-bg-secondary/75 backdrop-blur-2xl border border-border-subtle rounded-2xl p-5"
         initial={{ opacity: 0, x: 40 }}
         animate={{ opacity: 1, x: 0 }}
       >
@@ -191,7 +191,7 @@ export default function HistoricalTimeline({
       exit={{ opacity: 0, x: 40 }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
     >
-      <div className="bg-bg-secondary/95 backdrop-blur-xl border border-border-subtle rounded-2xl overflow-hidden shadow-2xl">
+      <div className="bg-bg-secondary/75 backdrop-blur-2xl border border-border-subtle rounded-2xl overflow-hidden shadow-2xl">
 
         {/* Header */}
         <div className="px-5 pt-5 pb-3 border-b border-border-subtle">

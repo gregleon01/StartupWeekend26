@@ -24,8 +24,10 @@ export const translations = {
     "crop.subtitle": "Какво отглеждате?",
 
     // Field info
-    "field.confidence": "увереност",
+    "field.location": "местоположение",
     "field.elevation": "м н.в.",
+    "field.station": "станция",
+    "field.confidence": "увереност",
 
     // Historical
     "history.title": "Исторически анализ",
@@ -70,8 +72,10 @@ export const translations = {
     "crop.title": "Select crop",
     "crop.subtitle": "What do you grow?",
 
+    "field.location": "location",
+    "field.elevation": "elevation",
+    "field.station": "station",
     "field.confidence": "confidence",
-    "field.elevation": "m",
 
     "history.title": "Historical Analysis",
     "history.events": "events would have triggered",

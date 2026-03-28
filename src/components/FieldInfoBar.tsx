@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MapPin, Mountain, Radio, ShieldCheck } from "lucide-react";
 import type { FieldPin, FieldEnrichment } from "@/types";
 import { useLocale } from "@/lib/i18n";
 
@@ -10,10 +9,6 @@ interface FieldInfoBarProps {
   enrichment: FieldEnrichment;
 }
 
-/**
- * Displays enriched field data: coordinates, elevation, municipality,
- * nearest weather station distance, and basis risk confidence score.
- */
 export default function FieldInfoBar({ pin, enrichment }: FieldInfoBarProps) {
   const { t } = useLocale();
   const confidencePercent = Math.round(enrichment.basisRiskConfidence * 100);
@@ -24,56 +19,47 @@ export default function FieldInfoBar({ pin, enrichment }: FieldInfoBarProps) {
         ? "text-accent-amber"
         : "text-danger-red";
 
+  const stats = [
+    {
+      label: t("field.location"),
+      value: enrichment.municipality !== "Unknown"
+        ? enrichment.municipality
+        : `${pin.lat.toFixed(3)}°N, ${pin.lng.toFixed(3)}°E`,
+    },
+    {
+      label: t("field.elevation"),
+      value: enrichment.elevation > 0 ? `${enrichment.elevation} m` : "—",
+    },
+    {
+      label: t("field.station"),
+      value: `${enrichment.nearestStation.name} · ${enrichment.stationDistance} km`,
+    },
+    {
+      label: t("field.confidence"),
+      value: `${confidencePercent}%`,
+      valueClass: confidenceColor,
+    },
+  ];
+
   return (
     <motion.div
-      className="absolute top-4 left-1/2 -translate-x-1/2 z-20"
-      initial={{ y: -40, opacity: 0 }}
+      className="absolute bottom-0 left-0 right-0 z-20"
+      initial={{ y: 60, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.3, type: "spring", damping: 20 }}
+      transition={{ delay: 0.3, type: "spring", damping: 22, stiffness: 180 }}
     >
-      <div className="flex items-center gap-4 px-4 py-2.5 bg-bg-secondary/90 backdrop-blur-xl border border-border-subtle rounded-xl">
-        <InfoChip icon={<MapPin className="w-3 h-3" />}>
-          {pin.lat.toFixed(3)}°N, {pin.lng.toFixed(3)}°E
-        </InfoChip>
-
-        {enrichment.elevation > 0 && (
-          <InfoChip icon={<Mountain className="w-3 h-3" />}>
-            {enrichment.elevation}m
-          </InfoChip>
-        )}
-
-        {enrichment.municipality !== "Unknown" && (
-          <InfoChip icon={<MapPin className="w-3 h-3" />}>
-            {enrichment.municipality}
-          </InfoChip>
-        )}
-
-        <InfoChip icon={<Radio className="w-3 h-3" />}>
-          {enrichment.nearestStation.name} · {enrichment.stationDistance}km
-        </InfoChip>
-
-        <InfoChip icon={<ShieldCheck className="w-3 h-3" />}>
-          <span className={confidenceColor}>
-            {confidencePercent}%
-          </span>
-          <span className="text-text-tertiary ml-1">{t("field.confidence")}</span>
-        </InfoChip>
+      <div className="flex items-center justify-around px-8 py-4 bg-bg-secondary/70 backdrop-blur-xl border-t border-border-subtle">
+        {stats.map((s) => (
+          <div key={s.label} className="flex flex-col items-center gap-0.5">
+            <span className="text-[9px] text-text-tertiary uppercase tracking-widest">
+              {s.label}
+            </span>
+            <span className={`text-sm font-medium font-mono whitespace-nowrap ${s.valueClass ?? "text-text-primary"}`}>
+              {s.value}
+            </span>
+          </div>
+        ))}
       </div>
     </motion.div>
-  );
-}
-
-function InfoChip({
-  icon,
-  children,
-}: {
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-1.5 text-text-secondary text-xs font-mono whitespace-nowrap">
-      <span className="text-text-tertiary">{icon}</span>
-      {children}
-    </div>
   );
 }
