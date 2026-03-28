@@ -3,6 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import type { ParametricContract, FieldEnrichment, FarmerParcel } from "@/types";
+import { contracts as contractsLib } from "@/lib/contracts";
 import { useLocale } from "@/lib/i18n";
 
 interface CoverageCardProps {
@@ -159,12 +160,30 @@ function TierCard({
 export default function CoverageCard({
   contract,
   onSimulate,
+  parcels,
 }: CoverageCardProps) {
-  const [selectedTier, setSelectedTier] = React.useState<number>(1); // Default: Standard
+  const [selectedTier, setSelectedTier] = React.useState<number>(1);
+  const [cropTabIndex, setCropTabIndex] = React.useState<number>(0);
+
+  // Derive unique contracts from parcels, falling back to the single contract
+  const uniqueContracts: ParametricContract[] = React.useMemo(() => {
+    if (!parcels || parcels.length === 0) return [contract];
+    const seen = new Set<string>();
+    const result: ParametricContract[] = [];
+    for (const p of parcels) {
+      if (!seen.has(p.crop)) {
+        seen.add(p.crop);
+        result.push(contractsLib[p.crop]);
+      }
+    }
+    return result;
+  }, [parcels, contract]);
+
+  const activeContract = uniqueContracts[cropTabIndex] ?? contract;
 
   return (
     <motion.div
-      className="absolute inset-0 z-30 flex items-center justify-center px-6"
+      className="absolute inset-0 z-30 flex flex-col items-center justify-center px-6 gap-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -172,13 +191,33 @@ export default function CoverageCard({
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/35 backdrop-blur-sm" />
 
+      {/* Crop tabs — only when multiple crops */}
+      {uniqueContracts.length > 1 && (
+        <div className="relative flex gap-2">
+          {uniqueContracts.map((c, i) => (
+            <button
+              key={c.crop}
+              onClick={() => { setCropTabIndex(i); setSelectedTier(1); }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer outline-none
+                ${cropTabIndex === i
+                  ? "bg-accent-amber text-bg-primary"
+                  : "bg-white/8 backdrop-blur-xl border border-white/12 text-white/70 hover:text-white"
+                }`}
+            >
+              <span>{c.icon}</span>
+              {c.crop}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Tier cards */}
       <div className="relative flex items-stretch gap-4 max-w-[900px] w-full">
         {TIERS.map((tier, i) => (
           <TierCard
-            key={tier.name}
+            key={`${activeContract.crop}-${tier.name}`}
             tier={tier}
-            contract={contract}
+            contract={activeContract}
             onSimulate={onSimulate}
             index={i}
             selected={selectedTier === i}
