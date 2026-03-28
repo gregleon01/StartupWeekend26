@@ -164,52 +164,54 @@ export default function FarmerPage() {
         <div className="h-px bg-white/8 mx-4" />
 
         {/* Row 2: actions */}
-        <div className="grid grid-cols-3 items-center">
-          {/* Left — Aklima / Back */}
-          <div className="flex items-center">
-            <Link
-              href="/"
-              className="flex items-center gap-1.5 px-5 py-2 text-white/60 text-xs
-                         hover:text-white hover:bg-white/8 rounded-l-full transition-all whitespace-nowrap outline-none"
+        <div className="flex items-center justify-center gap-1 px-2 pb-1">
+          {/* Aklima */}
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 px-4 py-1.5 text-white/60 text-xs
+                       hover:text-white hover:bg-white/10 rounded-full transition-all whitespace-nowrap outline-none"
+          >
+            <ArrowLeft className="w-3 h-3" />
+            Aklima
+          </Link>
+
+          {/* Back */}
+          {showBack && (
+            <motion.button
+              onClick={handleBack}
+              className="flex items-center gap-1 px-4 py-1.5 text-white/50 text-xs
+                         hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer outline-none whitespace-nowrap"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
             >
               <ArrowLeft className="w-3 h-3" />
-              Aklima
-            </Link>
-            {showBack && (
-              <motion.button
-                onClick={handleBack}
-                className="flex items-center gap-1 px-3 py-2 text-white/50 text-xs
-                           hover:text-white hover:bg-white/8 transition-all cursor-pointer outline-none whitespace-nowrap"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                <ArrowLeft className="w-3 h-3" />
-                {locale === "bg" ? "Назад" : "Back"}
-              </motion.button>
-            )}
-          </div>
+              {locale === "bg" ? "Назад" : "Back"}
+            </motion.button>
+          )}
 
-          {/* Center — Layers */}
-          <div className="flex justify-center">
-            <button
-              onClick={() => setWeatherOpen((o) => !o)}
-              className="flex items-center gap-1.5 px-4 py-2 text-white/70 text-xs
-                         hover:text-white hover:bg-white/8 rounded-full transition-all cursor-pointer outline-none"
-            >
-              {weatherMode === "none" && <Layers className="w-3.5 h-3.5" />}
-              {weatherMode === "clouds" && <Cloud className="w-3.5 h-3.5" />}
-              {weatherMode === "radar" && <CloudRain className="w-3.5 h-3.5" />}
-              {weatherMode === "temperature" && <Thermometer className="w-3.5 h-3.5" />}
-              <span>{weatherMode === "none" ? "Layers" : weatherMode.charAt(0).toUpperCase() + weatherMode.slice(1)}</span>
-              <ChevronDown className={`w-3 h-3 transition-transform ${weatherOpen ? "rotate-180" : ""}`} />
-            </button>
-          </div>
+          {/* Divider */}
+          <div className="w-px h-3.5 bg-white/12 mx-1" />
 
-          {/* Right — Language */}
-          <div className="flex justify-end">
-            <div className="px-5 py-2 rounded-r-full hover:bg-white/8 transition-all">
-              <LanguageToggle />
-            </div>
+          {/* Layers */}
+          <button
+            onClick={() => setWeatherOpen((o) => !o)}
+            className="flex items-center gap-1.5 px-4 py-1.5 text-white/70 text-xs
+                       hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer outline-none"
+          >
+            {weatherMode === "none" && <Layers className="w-3.5 h-3.5" />}
+            {weatherMode === "clouds" && <Cloud className="w-3.5 h-3.5" />}
+            {weatherMode === "radar" && <CloudRain className="w-3.5 h-3.5" />}
+            {weatherMode === "temperature" && <Thermometer className="w-3.5 h-3.5" />}
+            <span>{weatherMode === "none" ? "Layers" : weatherMode.charAt(0).toUpperCase() + weatherMode.slice(1)}</span>
+            <ChevronDown className={`w-3 h-3 transition-transform ${weatherOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {/* Divider */}
+          <div className="w-px h-3.5 bg-white/12 mx-1" />
+
+          {/* Language */}
+          <div className="px-4 py-1.5 hover:bg-white/10 rounded-full transition-all">
+            <LanguageToggle />
           </div>
         </div>
       </div>
