@@ -144,7 +144,7 @@ export default function FarmerPage() {
         {/* ← Aklima */}
         <Link
           href="/"
-          className="flex items-center gap-1.5 px-4 py-2 text-white/70 text-xs hover:text-white
+          className="flex items-center gap-1.5 px-4 py-3 text-white/70 text-xs hover:text-white
                      hover:bg-white/10 transition-all whitespace-nowrap"
         >
           <ArrowLeft className="w-3 h-3" />
@@ -152,10 +152,10 @@ export default function FarmerPage() {
         </Link>
 
         {/* Divider */}
-        <div className="w-px h-4 bg-white/15" />
+        <div className="w-px h-5 bg-white/15" />
 
         {/* Context label */}
-        <div className="px-4 py-2 text-xs text-white/80 whitespace-nowrap">
+        <div className="px-4 py-3 text-xs text-white/80 whitespace-nowrap">
           {state === "DRAWING" && (locale === "bg" ? "Начертайте полето" : "Draw your field boundary")}
           {state === "ASSIGN_CROP" && (locale === "bg" ? "Изберете култура" : "Select crop")}
           {state === "PARCELS" && (locale === "bg" ? "Вашите полета" : "Your fields")}
@@ -167,10 +167,10 @@ export default function FarmerPage() {
         {/* Back button — shown on inner steps */}
         {showBack && (
           <>
-            <div className="w-px h-4 bg-white/15" />
+            <div className="w-px h-5 bg-white/15" />
             <motion.button
               onClick={handleBack}
-              className="px-4 py-2 text-white/60 text-xs hover:text-white hover:bg-white/10
+              className="px-4 py-3 text-white/60 text-xs hover:text-white hover:bg-white/10
                          transition-all cursor-pointer whitespace-nowrap"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -181,12 +181,12 @@ export default function FarmerPage() {
         )}
 
         {/* Divider */}
-        <div className="w-px h-4 bg-white/15" />
+        <div className="w-px h-5 bg-white/15" />
 
         {/* Weather toggle */}
         <button
           onClick={() => setWeatherOpen((o) => !o)}
-          className="flex items-center gap-1.5 px-4 py-2 text-white/70 text-xs hover:text-white
+          className="flex items-center gap-1.5 px-4 py-3 text-white/70 text-xs hover:text-white
                      hover:bg-white/10 transition-all cursor-pointer whitespace-nowrap"
         >
           {weatherMode === "none" && <Layers className="w-3.5 h-3.5" />}
@@ -198,10 +198,10 @@ export default function FarmerPage() {
         </button>
 
         {/* Divider */}
-        <div className="w-px h-4 bg-white/15" />
+        <div className="w-px h-5 bg-white/15" />
 
         {/* Language toggle inline */}
-        <div className="px-3 py-1.5">
+        <div className="px-3 py-3">
           <LanguageToggle />
         </div>
       </div>
