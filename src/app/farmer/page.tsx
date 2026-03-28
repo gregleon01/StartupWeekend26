@@ -145,7 +145,7 @@ export default function FarmerPage() {
         <Link
           href="/"
           className="flex items-center gap-1.5 px-4 py-3 text-white/70 text-xs hover:text-white
-                     hover:bg-white/10 transition-all whitespace-nowrap"
+                     hover:bg-white/10 transition-all whitespace-nowrap outline-none"
         >
           <ArrowLeft className="w-3 h-3" />
           Aklima
@@ -171,7 +171,7 @@ export default function FarmerPage() {
             <motion.button
               onClick={handleBack}
               className="px-4 py-3 text-white/60 text-xs hover:text-white hover:bg-white/10
-                         transition-all cursor-pointer whitespace-nowrap"
+                         transition-all cursor-pointer whitespace-nowrap outline-none"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
@@ -187,7 +187,7 @@ export default function FarmerPage() {
         <button
           onClick={() => setWeatherOpen((o) => !o)}
           className="flex items-center gap-1.5 px-4 py-3 text-white/70 text-xs hover:text-white
-                     hover:bg-white/10 transition-all cursor-pointer whitespace-nowrap"
+                     hover:bg-white/10 transition-all cursor-pointer whitespace-nowrap outline-none"
         >
           {weatherMode === "none" && <Layers className="w-3.5 h-3.5" />}
           {weatherMode === "clouds" && <Cloud className="w-3.5 h-3.5" />}
