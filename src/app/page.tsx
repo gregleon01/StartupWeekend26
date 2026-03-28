@@ -1,141 +1,140 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
-import type { AppState, CropKey, FieldPin, ParametricContract, FieldEnrichment } from "@/types";
-import { contracts } from "@/lib/contracts";
-import { useWeatherData } from "@/hooks/useWeatherData";
-import { enrichField } from "@/lib/geoEnrich";
-
+import { motion } from "framer-motion";
+import { Sprout, Shield, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { useLocale } from "@/lib/i18n";
 import LanguageToggle from "@/components/LanguageToggle";
-import MapView from "@/components/MapView";
-import CropSelector from "@/components/CropSelector";
-import FieldInfoBar from "@/components/FieldInfoBar";
-import HistoricalTimeline from "@/components/HistoricalTimeline";
-import CoverageCard from "@/components/CoverageCard";
-import FrostSimulation from "@/components/FrostSimulation";
 
-export default function Home() {
-  const { t } = useLocale();
-  const [state, setState] = useState<AppState>("MAP_SELECT");
-  const [pin, setPin] = useState<FieldPin | null>(null);
-  const [contract, setContract] = useState<ParametricContract | null>(null);
-  const [enrichment, setEnrichment] = useState<FieldEnrichment | null>(null);
-
-  const weather = useWeatherData();
-
-  const handlePinDrop = useCallback(async (p: FieldPin) => {
-    setPin(p);
-    enrichField(p).then(setEnrichment);
-    setTimeout(() => setState("CROP_SELECT"), 800);
-  }, []);
-
-  const handleCropSelect = useCallback(
-    (crop: CropKey) => {
-      const c = contracts[crop];
-      setContract(c);
-      setState("HISTORY");
-      if (pin) weather.fetchAndAnalyze(pin.lat, pin.lng, c);
-    },
-    [pin, weather],
-  );
-
-  const handleBack = useCallback(() => {
-    if (state === "CROP_SELECT") {
-      setPin(null);
-      setEnrichment(null);
-      setState("MAP_SELECT");
-    } else if (state === "HISTORY") {
-      setContract(null);
-      setState("CROP_SELECT");
-    } else if (state === "COVERAGE") {
-      setState("HISTORY");
-    }
-  }, [state]);
-
-  const handleRestart = useCallback(() => {
-    setPin(null);
-    setEnrichment(null);
-    setContract(null);
-    setState("MAP_SELECT");
-  }, []);
-
-  const handleSeeCoverage = useCallback(() => setState("COVERAGE"), []);
-  const handleSimulate = useCallback(() => setState("SIMULATION"), []);
-
-  const mapDimmed = state === "CROP_SELECT" || state === "COVERAGE";
-  const showBack = state === "CROP_SELECT" || state === "HISTORY" || state === "COVERAGE";
+export default function LandingPage() {
+  const { locale } = useLocale();
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-bg-primary">
-      <MapView
-        pin={pin}
-        onPinDrop={handlePinDrop}
-        appState={state}
-        dimmed={mapDimmed}
+    <main className="relative h-screen w-screen overflow-hidden bg-bg-primary flex items-center justify-center">
+      {/* Subtle background gradient */}
+      <div
+        className="absolute inset-0 opacity-30"
+        style={{
+          background:
+            "radial-gradient(ellipse at 30% 50%, #F5A62310 0%, transparent 60%), radial-gradient(ellipse at 70% 50%, #4FC3F710 0%, transparent 60%)",
+        }}
       />
 
-      {/* Language toggle — always top-right */}
-      <div className="absolute top-4 right-4 z-50">
+      {/* Language toggle */}
+      <div className="absolute top-6 right-6 z-50">
         <LanguageToggle />
       </div>
 
-      {/* Back button — visible on all steps except MAP_SELECT and SIMULATION */}
-      {showBack && (
-        <motion.button
-          onClick={handleBack}
-          className={`absolute ${state === "HISTORY" ? "top-14" : "top-4"} left-4 z-40 flex items-center gap-1.5 px-3 py-1.5
-                     bg-bg-secondary border border-border-subtle
-                     rounded-lg text-text-secondary text-xs hover:text-text-primary
-                     hover:brightness-110 transition-all cursor-pointer`}
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -10 }}
+      <div className="relative z-10 w-full max-w-2xl px-6">
+        {/* Logo + tagline */}
+        <motion.div
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
-          <ArrowLeft className="w-3 h-3" />
-          {t("back")}
-        </motion.button>
-      )}
+          <h1 className="text-4xl font-bold text-text-primary tracking-tight">
+            Niva
+          </h1>
+          <p className="text-text-secondary text-base mt-2">
+            {locale === "bg"
+              ? "Параметрично земеделско застраховане"
+              : "Parametric Crop Insurance"}
+          </p>
+          <p className="text-text-tertiary text-sm mt-1">
+            {locale === "bg"
+              ? "Без документи · Без оценители · Изплащане за 48 часа"
+              : "No paperwork · No adjusters · Payout in 48 hours"}
+          </p>
+        </motion.div>
 
-      {/* Field info bar — shows after pin is placed */}
-      {pin && enrichment && state !== "MAP_SELECT" && state !== "SIMULATION" && (
-        <FieldInfoBar pin={pin} enrichment={enrichment} />
-      )}
-
-      <AnimatePresence mode="wait">
-        {state === "CROP_SELECT" && (
-          <CropSelector key="crop" onSelect={handleCropSelect} />
-        )}
-
-        {state === "HISTORY" && contract && (
-          <HistoricalTimeline
-            key="history"
-            events={weather.frostEvents}
-            contract={contract}
-            loading={weather.loading}
-            onSeeCoverage={handleSeeCoverage}
+        {/* Role cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <RoleCard
+            href="/farmer"
+            icon={<Sprout className="w-8 h-8" />}
+            title={locale === "bg" ? "Земеделец" : "Farmer"}
+            description={
+              locale === "bg"
+                ? "Защитете реколтата си от замръзване"
+                : "Protect your harvest from frost"
+            }
+            accent="text-success-green"
+            accentBg="bg-success-green/10"
+            delay={0.2}
           />
-        )}
-
-        {state === "COVERAGE" && contract && (
-          <CoverageCard
-            key="coverage"
-            contract={contract}
-            onSimulate={handleSimulate}
-            enrichment={enrichment}
+          <RoleCard
+            href="/admin"
+            icon={<Shield className="w-8 h-8" />}
+            title={locale === "bg" ? "Застраховател" : "Insurer"}
+            description={
+              locale === "bg"
+                ? "Управлявайте портфолиото си"
+                : "Manage your portfolio"
+            }
+            accent="text-accent-amber"
+            accentBg="bg-accent-amber/10"
+            delay={0.35}
           />
-        )}
-      </AnimatePresence>
+        </div>
 
-      {state === "SIMULATION" && contract && (
-        <FrostSimulation
-          key="simulation"
-          contract={contract}
-          onExit={handleRestart}
-        />
-      )}
+        {/* Footer */}
+        <motion.p
+          className="text-text-tertiary text-xs text-center mt-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+        >
+          HackAUBG 8.0 · The Hub Sofia
+        </motion.p>
+      </div>
     </main>
+  );
+}
+
+function RoleCard({
+  href,
+  icon,
+  title,
+  description,
+  accent,
+  accentBg,
+  delay,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  accent: string;
+  accentBg: string;
+  delay: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, type: "spring", damping: 20 }}
+    >
+      <Link href={href}>
+        <div
+          className="group relative p-6 bg-bg-secondary border border-border-subtle rounded-2xl
+                     hover:border-border-subtle/80 hover:bg-bg-tertiary/30 transition-all cursor-pointer"
+        >
+          <div className={`w-14 h-14 ${accentBg} rounded-xl flex items-center justify-center mb-4`}>
+            <span className={accent}>{icon}</span>
+          </div>
+          <h2 className="text-text-primary text-lg font-semibold mb-1">
+            {title}
+          </h2>
+          <p className="text-text-secondary text-sm leading-relaxed">
+            {description}
+          </p>
+          <ArrowRight
+            className={`absolute top-6 right-6 w-5 h-5 text-text-tertiary group-hover:${accent}
+                        group-hover:translate-x-1 transition-all`}
+          />
+        </div>
+      </Link>
+    </motion.div>
   );
 }
