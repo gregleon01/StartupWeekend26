@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
-import Map, { Source, Layer, type MapLayerMouseEvent } from "react-map-gl";
+import { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import Map, { Source, Layer, type MapLayerMouseEvent, type MapRef } from "react-map-gl";
 import type { MockField, CropKey } from "@/types";
 import { contracts } from "@/lib/contracts";
 import WeatherOverlay from "./WeatherOverlay";
@@ -40,6 +40,17 @@ function fieldColor(field: MockField, mode: ColorMode): string {
 }
 
 export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
+  const mapRef = useRef<MapRef>(null);
+
+  // Resize map when container changes (e.g. draggable panel)
+  useEffect(() => {
+    const observer = new ResizeObserver(() => {
+      mapRef.current?.resize();
+    });
+    const el = document.getElementById("insured-fields-map-container");
+    if (el) observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   const [tooltip, setTooltip] = useState<{
     field: MockField;
     x: number;
@@ -88,8 +99,9 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
   );
 
   return (
-    <div className="absolute inset-0">
+    <div id="insured-fields-map-container" className="absolute inset-0">
       <Map
+        ref={mapRef}
         initialViewState={{
           latitude: 42.3,
           longitude: 22.65,
