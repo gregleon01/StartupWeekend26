@@ -81,6 +81,9 @@ export default function PayoutNotification({
           <p className="text-text-primary font-medium">
             Frost event confirmed
           </p>
+          <span className="ml-auto text-[10px] font-mono text-text-tertiary border border-border-subtle px-1.5 py-0.5 rounded">
+            DEMO
+          </span>
         </motion.div>
 
         {/* Event details */}
@@ -109,6 +112,7 @@ export default function PayoutNotification({
           </p>
           <p className="font-mono text-5xl font-bold text-success-green leading-none tabular-nums">
             &euro;{animatedAmount.toFixed(2)}
+            <span className="text-lg text-text-tertiary font-normal ml-1">/ha</span>
           </p>
         </div>
         <p className="text-text-secondary text-sm mb-5">

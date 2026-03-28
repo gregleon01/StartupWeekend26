@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { X, RotateCcw } from "lucide-react";
 import type { ParametricContract } from "@/types";
 import { generateSimulationData } from "@/lib/frostAnalysis";
 import TemperatureGauge from "./TemperatureGauge";
@@ -10,11 +11,12 @@ import WhatsAppMock from "./WhatsAppMock";
 
 interface FrostSimulationProps {
   contract: ParametricContract;
+  onExit: () => void;
 }
 
 type SimPhase = "darkening" | "coldfront" | "tempdrop" | "counting" | "payout";
 
-export default function FrostSimulation({ contract }: FrostSimulationProps) {
+export default function FrostSimulation({ contract, onExit }: FrostSimulationProps) {
   const [phase, setPhase] = useState<SimPhase>("darkening");
   const [temperature, setTemperature] = useState(4.2); // Real start: 4.2°C at sunset
   const [breachHours, setBreachHours] = useState(0);
@@ -136,6 +138,37 @@ export default function FrostSimulation({ contract }: FrostSimulationProps) {
 
   return (
     <div className="absolute inset-0 z-40 pointer-events-none">
+
+      {/* Exit button — always visible */}
+      <button
+        onClick={onExit}
+        className="absolute top-4 left-4 z-50 flex items-center gap-1.5 px-3 py-1.5
+                   bg-bg-secondary/80 backdrop-blur-md border border-border-subtle
+                   rounded-lg text-text-secondary text-xs hover:text-text-primary
+                   hover:bg-bg-secondary transition-all cursor-pointer pointer-events-auto"
+      >
+        <X className="w-3 h-3" />
+        Exit
+      </button>
+
+      {/* Context label — visible during early phases */}
+      <AnimatePresence>
+        {(phase === "darkening" || phase === "coldfront") && (
+          <motion.div
+            className="absolute top-4 left-1/2 -translate-x-1/2 z-50"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="px-3 py-1.5 bg-bg-secondary/80 backdrop-blur-md border border-border-subtle rounded-lg">
+              <p className="text-text-tertiary text-xs uppercase tracking-widest">
+                Frost Event Simulation
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Full-screen dim */}
       <motion.div
         className="absolute inset-0"
@@ -266,6 +299,34 @@ export default function FrostSimulation({ contract }: FrostSimulationProps) {
       <AnimatePresence>
         {showWhatsApp && (
           <WhatsAppMock amount={contract.payoutPerHectare} />
+        )}
+      </AnimatePresence>
+
+      {/* Restart CTA — appears after simulation completes */}
+      <AnimatePresence>
+        {showPayout && (
+          <motion.div
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex gap-3 pointer-events-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 2.5 }}
+          >
+            <button
+              onClick={onExit}
+              className="flex items-center gap-2 px-5 py-2.5 bg-bg-secondary/90 backdrop-blur-md
+                         border border-border-subtle rounded-xl text-text-secondary text-sm
+                         hover:text-text-primary hover:bg-bg-secondary transition-all cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Try another field
+            </button>
+            <button
+              className="px-5 py-2.5 bg-accent-amber text-bg-primary rounded-xl text-sm
+                         font-semibold hover:brightness-110 transition-all cursor-pointer"
+            >
+              Get insured
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
