@@ -14,6 +14,7 @@ interface RainViewerFrame {
 
 interface WeatherOverlayProps {
   showControls?: boolean;
+  defaultMode?: OverlayMode;
 }
 
 /**
@@ -26,8 +27,9 @@ interface WeatherOverlayProps {
  */
 export default function WeatherOverlay({
   showControls = true,
+  defaultMode = "clouds",
 }: WeatherOverlayProps) {
-  const [mode, setMode] = useState<OverlayMode>("clouds");
+  const [mode, setMode] = useState<OverlayMode>(defaultMode);
   const [radarHost, setRadarHost] = useState("https://tilecache.rainviewer.com");
   const [radarFrames, setRadarFrames] = useState<RainViewerFrame[]>([]);
   const [pastCount, setPastCount] = useState(0);

@@ -102,29 +102,12 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setTooltip(null)}
       >
-        {/* Live weather overlays */}
-        <WeatherOverlay showControls={true} />
+        {/* Live weather overlays — rendered BELOW field markers, off by default */}
+        <WeatherOverlay showControls={true} defaultMode="none" />
 
+        {/* Field markers — rendered ABOVE weather overlays */}
         <Source id="fields" type="geojson" data={geojson}>
-          <Layer
-            id="fields-circle"
-            type="circle"
-            paint={{
-              "circle-radius": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                10, 4,
-                13, 8,
-                16, 14,
-              ],
-              "circle-color": ["get", "color"],
-              "circle-opacity": 0.85,
-              "circle-stroke-width": 1,
-              "circle-stroke-color": "rgba(255,255,255,0.13)",
-            }}
-          />
-          {/* Glow ring for triggered payouts */}
+          {/* Glow ring for triggered payouts — rendered first (below circles) */}
           <Layer
             id="fields-glow"
             type="circle"
@@ -134,12 +117,31 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
                 "interpolate",
                 ["linear"],
                 ["zoom"],
-                10, 8,
-                13, 16,
-                16, 24,
+                10, 12,
+                13, 22,
+                16, 32,
               ],
-              "circle-color": "rgba(239,83,80,0.19)",
+              "circle-color": "rgba(239,83,80,0.25)",
               "circle-stroke-width": 0,
+            }}
+          />
+          {/* Main field circles */}
+          <Layer
+            id="fields-circle"
+            type="circle"
+            paint={{
+              "circle-radius": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                10, 6,
+                13, 10,
+                16, 16,
+              ],
+              "circle-color": ["get", "color"],
+              "circle-opacity": 0.9,
+              "circle-stroke-width": 2,
+              "circle-stroke-color": "rgba(255,255,255,0.4)",
             }}
           />
         </Source>
