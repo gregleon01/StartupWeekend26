@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
+import { Thermometer, Clock, Calendar, Shield } from "lucide-react";
 import type { CropKey } from "@/types";
 import { contracts } from "@/lib/contracts";
 import { useLocale } from "@/lib/i18n";
@@ -12,8 +14,17 @@ interface ParcelCropSheetProps {
 
 const CROPS: CropKey[] = ["cherries", "grapes", "wheat", "sunflower"];
 
+function formatWindow(start: string, end: string): string {
+  const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const [sm, sd] = start.split("-").map(Number);
+  const [em, ed] = end.split("-").map(Number);
+  return `${m[sm-1]} ${sd} – ${m[em-1]} ${ed}`;
+}
+
 export default function ParcelCropSheet({ hectares, onSelect }: ParcelCropSheetProps) {
   const { locale } = useLocale();
+  const [hoveredCrop, setHoveredCrop] = useState<CropKey | null>(null);
+  const hovered = hoveredCrop ? contracts[hoveredCrop] : null;
 
   return (
     <motion.div
@@ -37,28 +48,82 @@ export default function ParcelCropSheet({ hectares, onSelect }: ParcelCropSheetP
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
+        <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
           {CROPS.map((key) => {
             const c = contracts[key];
+            const totalPayout = Math.round(c.payoutPerHectare * hectares);
+            const totalPremium = Math.round(c.premiumPerHectare * hectares);
             return (
               <motion.button
                 key={key}
                 onClick={() => onSelect(key)}
+                onMouseEnter={() => setHoveredCrop(key)}
+                onMouseLeave={() => setHoveredCrop(null)}
                 whileTap={{ scale: 0.97 }}
-                className="p-4 rounded-xl text-center bg-bg-tertiary/60
+                className="p-4 rounded-xl text-left bg-bg-tertiary/60
                           hover:ring-1 hover:ring-accent-amber/40 transition-all cursor-pointer"
               >
-                <span className="text-2xl block mb-1.5">{c.icon}</span>
-                <span className="text-text-primary text-sm font-medium block">
-                  {locale === "bg" ? c.cropBg : c.crop}
-                </span>
-                <span className="text-text-tertiary text-[11px] block mt-0.5">
-                  €{c.premiumPerHectare}/ha
-                </span>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">{c.icon}</span>
+                  <div>
+                    <span className="text-text-primary text-sm font-medium block">
+                      {locale === "bg" ? c.cropBg : c.crop}
+                    </span>
+                    <span className="text-text-tertiary text-[10px] block">
+                      {locale === "bg" ? c.crop : c.cropBg}
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-1 text-[11px]">
+                  <div className="flex justify-between">
+                    <span className="text-text-tertiary">
+                      {locale === "bg" ? "Изплащане" : "Payout"}
+                    </span>
+                    <span className="font-mono text-accent-amber font-bold">
+                      €{totalPayout.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-text-tertiary">
+                      {locale === "bg" ? "Премия" : "Premium"}
+                    </span>
+                    <span className="font-mono text-text-secondary">
+                      €{totalPremium}/{locale === "bg" ? "сезон" : "season"}
+                    </span>
+                  </div>
+                </div>
               </motion.button>
             );
           })}
         </div>
+
+        {/* Contract detail preview on hover */}
+        <motion.div
+          className="max-w-md mx-auto mt-4 overflow-hidden"
+          animate={{ height: hovered ? 52 : 0, opacity: hovered ? 1 : 0 }}
+          transition={{ duration: 0.15 }}
+        >
+          {hovered && (
+            <div className="flex items-center justify-center gap-5 text-[11px] text-text-tertiary py-2">
+              <span className="flex items-center gap-1">
+                <Thermometer className="w-3 h-3" />
+                {hovered.triggerDirection === "below" ? "<" : ">"} {hovered.threshold}{hovered.thresholdUnit}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {hovered.durationThreshold}h
+              </span>
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                {formatWindow(hovered.sensitiveStart, hovered.sensitiveEnd)}
+              </span>
+              <span className="flex items-center gap-1">
+                <Shield className="w-3 h-3" />
+                €{hovered.payoutPerHectare}/ha
+              </span>
+            </div>
+          )}
+        </motion.div>
       </div>
     </motion.div>
   );
