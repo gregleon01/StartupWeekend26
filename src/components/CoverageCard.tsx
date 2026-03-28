@@ -2,11 +2,12 @@
 
 import { motion } from "framer-motion";
 import { Shield } from "lucide-react";
-import type { ParametricContract } from "@/types";
+import type { ParametricContract, FieldEnrichment } from "@/types";
 
 interface CoverageCardProps {
   contract: ParametricContract;
   onSimulate: () => void;
+  enrichment?: FieldEnrichment | null;
 }
 
 function formatWindow(start: string, end: string) {
@@ -22,6 +23,7 @@ function formatWindow(start: string, end: string) {
 export default function CoverageCard({
   contract,
   onSimulate,
+  enrichment,
 }: CoverageCardProps) {
   return (
     <motion.div
@@ -55,7 +57,7 @@ export default function CoverageCard({
           <p className="text-text-secondary text-sm leading-relaxed">
             IF temperature drops below{" "}
             <span className="font-mono text-frost-blue font-semibold">
-              {contract.temperatureThreshold}°C
+              {contract.threshold}°C
             </span>
           </p>
           <p className="text-text-secondary text-sm leading-relaxed">
@@ -86,13 +88,38 @@ export default function CoverageCard({
         </div>
 
         {/* Premium */}
-        <p className="text-text-secondary text-sm mb-6">
+        <p className="text-text-secondary text-sm mb-4">
           Premium:{" "}
           <span className="font-mono text-text-primary">
             &euro;{contract.premiumPerHectare}
           </span>
           /ha per season
         </p>
+
+        {/* Basis risk confidence */}
+        {enrichment && (
+          <div className="flex items-center justify-between p-3 bg-bg-tertiary/50 rounded-lg mb-5 text-xs">
+            <div>
+              <p className="text-text-tertiary uppercase tracking-wider">
+                Trigger confidence
+              </p>
+              <p className="text-text-secondary mt-0.5">
+                {enrichment.stationDistance}km from {enrichment.nearestStation.name} station
+              </p>
+            </div>
+            <span
+              className={`font-mono text-lg font-bold ${
+                enrichment.basisRiskConfidence >= 0.85
+                  ? "text-success-green"
+                  : enrichment.basisRiskConfidence >= 0.65
+                    ? "text-accent-amber"
+                    : "text-danger-red"
+              }`}
+            >
+              {Math.round(enrichment.basisRiskConfidence * 100)}%
+            </span>
+          </div>
+        )}
 
         {/* CTA */}
         <motion.button

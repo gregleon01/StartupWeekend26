@@ -47,7 +47,7 @@ export default function FrostSimulation({ contract }: FrostSimulationProps) {
   // Orchestrate the 5-phase sequence
   useEffect(() => {
     const data = simData.current;
-    const threshold = contract.temperatureThreshold;
+    const threshold = contract.threshold;
 
     // Phase 1: Darkening (0–1.5s) — handled by parent dimming overlay
     setPhase("darkening");
@@ -206,7 +206,7 @@ export default function FrostSimulation({ contract }: FrostSimulationProps) {
       {/* Temperature gauge */}
       <TemperatureGauge
         temperature={temperature}
-        threshold={contract.temperatureThreshold}
+        threshold={contract.threshold}
         visible={showGauge}
         breached={breached}
       />
@@ -221,7 +221,7 @@ export default function FrostSimulation({ contract }: FrostSimulationProps) {
             exit={{ opacity: 0, y: 20 }}
           >
             <p className="text-text-tertiary text-xs uppercase tracking-wider mb-1">
-              Hours below {contract.temperatureThreshold}°C
+              Hours below {contract.threshold}°C
             </p>
             <p className="font-mono text-3xl font-bold tabular-nums">
               <span className={triggerFired ? "text-accent-amber" : "text-text-primary"}>

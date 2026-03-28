@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { motion } from "framer-motion";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import type { FrostEvent, ParametricContract } from "@/types";
+import { analyzeTrend } from "@/lib/statistics";
 
 interface HistoricalTimelineProps {
   events: FrostEvent[];
@@ -55,6 +57,13 @@ export default function HistoricalTimeline({
   const animTriggered = useCountUp(triggeredCount, 200);
   const animLoss = useCountUp(totalLoss, 400);
 
+  const trend = useMemo(() => analyzeTrend(events), [events]);
+
+  const TrendIcon =
+    trend.slope > 0.02 ? TrendingUp : trend.slope < -0.02 ? TrendingDown : Minus;
+  const trendColor =
+    trend.slope > 0.02 ? "text-danger-red" : trend.slope < -0.02 ? "text-success-green" : "text-text-tertiary";
+
   const [tooltip, setTooltip] = useState<{
     event: FrostEvent;
     x: number;
@@ -98,12 +107,16 @@ export default function HistoricalTimeline({
             <span className="font-mono text-accent-amber font-bold">
               {animTriggered}
             </span>{" "}
-            frost events would have triggered payout &middot;{" "}
+            events would have triggered &middot;{" "}
             <span className="font-mono text-danger-red font-bold">
               &euro;{animLoss.toLocaleString()}
             </span>{" "}
             unpaid losses
           </p>
+          <div className={`flex items-center gap-1 text-xs mt-0.5 ${trendColor}`}>
+            <TrendIcon className="w-3 h-3" />
+            <span>{trend.description}</span>
+          </div>
         </div>
         <motion.button
           onClick={onSeeCoverage}

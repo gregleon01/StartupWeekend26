@@ -2,8 +2,9 @@
 
 import { useMemo, useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Shield, TrendingUp, MapPin, AlertTriangle, Banknote } from "lucide-react";
+import { Shield, TrendingUp, MapPin, AlertTriangle, Banknote, BarChart3 } from "lucide-react";
 import { generateMockFields, computeFieldStats } from "@/lib/mockFields";
+import { computePortfolioRisk } from "@/lib/statistics";
 import { contracts } from "@/lib/contracts";
 import type { CropKey } from "@/types";
 import InsuredFieldsMap from "@/components/InsuredFieldsMap";
@@ -44,6 +45,7 @@ const RECENT_ACTIVITY = [
 export default function DashboardPage() {
   const fields = useMemo(() => generateMockFields(), []);
   const stats = useMemo(() => computeFieldStats(fields), [fields]);
+  const portfolio = useMemo(() => computePortfolioRisk(fields), [fields]);
 
   const animFields = useCountUp(stats.fieldsInsured, 1200, 200);
   const animHa = useCountUp(stats.hectaresCovered, 1200, 350);
@@ -146,6 +148,21 @@ export default function DashboardPage() {
             ))}
           </div>
 
+          {/* Portfolio Risk Metrics */}
+          <div className="mt-6 space-y-2">
+            <div className="flex items-center gap-1.5 mb-3">
+              <BarChart3 className="w-3.5 h-3.5 text-text-tertiary" />
+              <p className="text-text-tertiary text-xs uppercase tracking-widest">
+                Portfolio Risk
+              </p>
+            </div>
+            <RiskMetric label="Total Exposure" value={`€${portfolio.totalExposure.toLocaleString()}`} />
+            <RiskMetric label="Expected Annual Payout" value={`€${portfolio.expectedAnnualPayout.toLocaleString()}`} />
+            <RiskMetric label="VaR 95%" value={`€${portfolio.valueAtRisk95.toLocaleString()}`} highlight />
+            <RiskMetric label="Correlation Zones" value={String(portfolio.correlationZones)} />
+            <RiskMetric label="Diversification Benefit" value={`${Math.round(portfolio.diversificationBenefit * 100)}%`} />
+          </div>
+
           {/* Legend */}
           <div className="mt-6 space-y-2">
             <p className="text-text-tertiary text-xs uppercase tracking-widest mb-2">
@@ -191,6 +208,27 @@ function StatPill({
         {value.toLocaleString()}
       </span>
       <span className="text-text-tertiary text-xs">{label}</span>
+    </div>
+  );
+}
+
+function RiskMetric({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between py-1.5">
+      <span className="text-text-tertiary text-xs">{label}</span>
+      <span
+        className={`font-mono text-xs font-bold ${highlight ? "text-accent-amber" : "text-text-primary"}`}
+      >
+        {value}
+      </span>
     </div>
   );
 }

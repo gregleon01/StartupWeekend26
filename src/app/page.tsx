@@ -2,12 +2,14 @@
 
 import { useState, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
-import type { AppState, CropKey, FieldPin, ParametricContract } from "@/types";
+import type { AppState, CropKey, FieldPin, ParametricContract, FieldEnrichment } from "@/types";
 import { contracts } from "@/lib/contracts";
 import { useWeatherData } from "@/hooks/useWeatherData";
+import { enrichField } from "@/lib/geoEnrich";
 
 import MapView from "@/components/MapView";
 import CropSelector from "@/components/CropSelector";
+import FieldInfoBar from "@/components/FieldInfoBar";
 import HistoricalTimeline from "@/components/HistoricalTimeline";
 import CoverageCard from "@/components/CoverageCard";
 import FrostSimulation from "@/components/FrostSimulation";
@@ -15,48 +17,35 @@ import FrostSimulation from "@/components/FrostSimulation";
 export default function Home() {
   const [state, setState] = useState<AppState>("MAP_SELECT");
   const [pin, setPin] = useState<FieldPin | null>(null);
-  const [selectedCrop, setSelectedCrop] = useState<CropKey | null>(null);
   const [contract, setContract] = useState<ParametricContract | null>(null);
+  const [enrichment, setEnrichment] = useState<FieldEnrichment | null>(null);
 
   const weather = useWeatherData();
 
-  const handlePinDrop = useCallback((p: FieldPin) => {
+  const handlePinDrop = useCallback(async (p: FieldPin) => {
     setPin(p);
-    // Small delay to let fly-to animation start
+    // Start enrichment immediately (geocode + elevation + basis risk)
+    enrichField(p).then(setEnrichment);
     setTimeout(() => setState("CROP_SELECT"), 800);
   }, []);
 
   const handleCropSelect = useCallback(
     (crop: CropKey) => {
-      setSelectedCrop(crop);
       const c = contracts[crop];
       setContract(c);
       setState("HISTORY");
-
-      // Start fetching weather data immediately
-      if (pin) {
-        weather.fetchAndAnalyze(pin.lat, pin.lng, c);
-      }
+      if (pin) weather.fetchAndAnalyze(pin.lat, pin.lng, c);
     },
     [pin, weather],
   );
 
-  const handleSeeCoverage = useCallback(() => {
-    setState("COVERAGE");
-  }, []);
+  const handleSeeCoverage = useCallback(() => setState("COVERAGE"), []);
+  const handleSimulate = useCallback(() => setState("SIMULATION"), []);
 
-  const handleSimulate = useCallback(() => {
-    setState("SIMULATION");
-  }, []);
-
-  // Determine if map should be dimmed
-  const mapDimmed =
-    state === "CROP_SELECT" ||
-    state === "COVERAGE";
+  const mapDimmed = state === "CROP_SELECT" || state === "COVERAGE";
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-bg-primary">
-      {/* Map — always present */}
       <MapView
         pin={pin}
         onPinDrop={handlePinDrop}
@@ -64,7 +53,11 @@ export default function Home() {
         dimmed={mapDimmed}
       />
 
-      {/* State overlays */}
+      {/* Field info bar — shows after pin is placed */}
+      {pin && enrichment && state !== "MAP_SELECT" && state !== "SIMULATION" && (
+        <FieldInfoBar pin={pin} enrichment={enrichment} />
+      )}
+
       <AnimatePresence mode="wait">
         {state === "CROP_SELECT" && (
           <CropSelector key="crop" onSelect={handleCropSelect} />
@@ -85,11 +78,11 @@ export default function Home() {
             key="coverage"
             contract={contract}
             onSimulate={handleSimulate}
+            enrichment={enrichment}
           />
         )}
       </AnimatePresence>
 
-      {/* Simulation — layered on top of everything */}
       {state === "SIMULATION" && contract && (
         <FrostSimulation key="simulation" contract={contract} />
       )}
