@@ -10,7 +10,7 @@ export default function LandingPage() {
   const { locale } = useLocale();
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden flex items-center justify-center">
+    <main className="relative h-screen w-screen overflow-hidden">
       {/* Background image */}
       <div
         className="absolute inset-0 bg-cover bg-center"
@@ -25,16 +25,16 @@ export default function LandingPage() {
         <LanguageToggle />
       </div>
 
-      {/* Glass content panel */}
+      {/* Glass content panel — full screen */}
       <motion.div
-        className="relative z-10 w-full max-w-2xl mx-6 px-10 py-12 rounded-3xl
-                   bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        className="relative z-10 w-full h-full flex flex-col items-center justify-center px-10 py-12
+                   bg-white/5 backdrop-blur-xl border-x border-white/8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.7 }}
       >
         {/* Logo + tagline */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-10 w-full max-w-2xl">
           <h1 className="text-5xl font-bold text-white tracking-tight">
             Niva
           </h1>
@@ -51,7 +51,7 @@ export default function LandingPage() {
         </div>
 
         {/* Role cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch w-full max-w-2xl">
           <RoleCard
             href="/farmer"
             icon={<Sprout className="w-8 h-8" />}
