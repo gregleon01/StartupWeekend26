@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import type { CropKey } from "@/types";
 import { contracts } from "@/lib/contracts";
+import { useLocale } from "@/lib/i18n";
 
 interface CropSelectorProps {
   onSelect: (crop: CropKey) => void;
@@ -12,6 +13,7 @@ interface CropSelectorProps {
 const CROPS: CropKey[] = ["cherries", "grapes", "wheat", "sunflower"];
 
 export default function CropSelector({ onSelect }: CropSelectorProps) {
+  const { locale, t } = useLocale();
   const [selected, setSelected] = useState<CropKey | null>(null);
 
   const handlePick = (crop: CropKey) => {
@@ -32,10 +34,10 @@ export default function CropSelector({ onSelect }: CropSelectorProps) {
         <div className="w-10 h-1 bg-text-tertiary/40 rounded-full mx-auto mb-5" />
 
         <p className="text-text-primary text-lg font-medium text-center">
-          Изберете култура
+          {t("crop.title")}
         </p>
         <p className="text-text-secondary text-sm text-center mb-6">
-          Select your crop
+          {t("crop.subtitle")}
         </p>
 
         <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
@@ -58,10 +60,10 @@ export default function CropSelector({ onSelect }: CropSelectorProps) {
               >
                 <span className="text-3xl block mb-2">{c.icon}</span>
                 <span className="text-text-primary text-sm font-medium block">
-                  {c.cropBg}
+                  {locale === "bg" ? c.cropBg : c.crop}
                 </span>
                 <span className="text-text-tertiary text-xs block mt-0.5">
-                  {c.crop}
+                  {locale === "bg" ? c.crop : c.cropBg}
                 </span>
               </motion.button>
             );

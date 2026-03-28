@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import LocaleProvider from "@/components/LocaleProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,6 +17,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#F5A623" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -27,7 +32,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <LocaleProvider>{children}</LocaleProvider>
+      </body>
     </html>
   );
 }

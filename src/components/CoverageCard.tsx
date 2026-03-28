@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Shield } from "lucide-react";
 import type { ParametricContract, FieldEnrichment } from "@/types";
+import { useLocale } from "@/lib/i18n";
 
 interface CoverageCardProps {
   contract: ParametricContract;
@@ -25,6 +26,7 @@ export default function CoverageCard({
   onSimulate,
   enrichment,
 }: CoverageCardProps) {
+  const { t } = useLocale();
   return (
     <motion.div
       className="absolute inset-0 z-30 flex items-center justify-center px-6"
@@ -55,19 +57,19 @@ export default function CoverageCard({
         {/* Condition */}
         <div className="mb-6 space-y-1.5">
           <p className="text-text-secondary text-sm leading-relaxed">
-            IF temperature drops below{" "}
+            {t("coverage.if")}{" "}
             <span className="font-mono text-frost-blue font-semibold">
               {contract.threshold}°C
             </span>
           </p>
           <p className="text-text-secondary text-sm leading-relaxed">
-            for more than{" "}
+            {t("coverage.for")}{" "}
             <span className="font-mono text-text-primary font-semibold">
-              {contract.durationThreshold} consecutive hours
+              {contract.durationThreshold} {t("coverage.hours")}
             </span>
           </p>
           <p className="text-text-secondary text-sm leading-relaxed">
-            during{" "}
+            {t("coverage.during")}{" "}
             <span className="text-text-primary font-medium">
               {formatWindow(contract.sensitiveStart, contract.sensitiveEnd)}
             </span>
@@ -77,7 +79,7 @@ export default function CoverageCard({
         {/* Payout amount — the star */}
         <div className="mb-1">
           <p className="text-text-tertiary text-xs uppercase tracking-widest mb-1">
-            You receive
+            {t("coverage.receive")}
           </p>
           <p className="font-mono text-5xl font-bold text-accent-amber leading-none">
             &euro;{contract.payoutPerHectare}
@@ -89,11 +91,11 @@ export default function CoverageCard({
 
         {/* Premium */}
         <p className="text-text-secondary text-sm mb-4">
-          Premium:{" "}
+          {t("coverage.premium")}:{" "}
           <span className="font-mono text-text-primary">
             &euro;{contract.premiumPerHectare}
           </span>
-          /ha per season
+          {t("coverage.perSeason")}
         </p>
 
         {/* Basis risk confidence */}
@@ -102,7 +104,7 @@ export default function CoverageCard({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-text-tertiary uppercase tracking-wider">
-                  Trigger confidence
+                  {t("coverage.confidence")}
                 </p>
                 <p className="text-text-secondary mt-0.5">
                   {enrichment.stationDistance}km from {enrichment.nearestStation.name} station
@@ -121,8 +123,7 @@ export default function CoverageCard({
               </span>
             </div>
             <p className="text-text-tertiary leading-relaxed">
-              Probability that the reference station accurately reflects conditions at your field.
-              Distance and elevation difference are the primary risk factors.
+              {t("coverage.confidenceDesc")}
             </p>
           </div>
         )}
@@ -134,7 +135,7 @@ export default function CoverageCard({
                      hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
           whileTap={{ scale: 0.98 }}
         >
-          Simulate Frost Event
+          {t("coverage.simulate")}
         </motion.button>
       </motion.div>
     </motion.div>

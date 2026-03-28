@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { MapPin, Mountain, Radio, ShieldCheck } from "lucide-react";
 import type { FieldPin, FieldEnrichment } from "@/types";
+import { useLocale } from "@/lib/i18n";
 
 interface FieldInfoBarProps {
   pin: FieldPin;
@@ -14,6 +15,7 @@ interface FieldInfoBarProps {
  * nearest weather station distance, and basis risk confidence score.
  */
 export default function FieldInfoBar({ pin, enrichment }: FieldInfoBarProps) {
+  const { t } = useLocale();
   const confidencePercent = Math.round(enrichment.basisRiskConfidence * 100);
   const confidenceColor =
     confidencePercent >= 85
@@ -54,7 +56,7 @@ export default function FieldInfoBar({ pin, enrichment }: FieldInfoBarProps) {
           <span className={confidenceColor}>
             {confidencePercent}%
           </span>
-          <span className="text-text-tertiary ml-1">confidence</span>
+          <span className="text-text-tertiary ml-1">{t("field.confidence")}</span>
         </InfoChip>
       </div>
     </motion.div>

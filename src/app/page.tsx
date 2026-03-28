@@ -8,6 +8,8 @@ import { contracts } from "@/lib/contracts";
 import { useWeatherData } from "@/hooks/useWeatherData";
 import { enrichField } from "@/lib/geoEnrich";
 
+import { useLocale } from "@/lib/i18n";
+import LanguageToggle from "@/components/LanguageToggle";
 import MapView from "@/components/MapView";
 import CropSelector from "@/components/CropSelector";
 import FieldInfoBar from "@/components/FieldInfoBar";
@@ -16,6 +18,7 @@ import CoverageCard from "@/components/CoverageCard";
 import FrostSimulation from "@/components/FrostSimulation";
 
 export default function Home() {
+  const { t } = useLocale();
   const [state, setState] = useState<AppState>("MAP_SELECT");
   const [pin, setPin] = useState<FieldPin | null>(null);
   const [contract, setContract] = useState<ParametricContract | null>(null);
@@ -74,11 +77,12 @@ export default function Home() {
         dimmed={mapDimmed}
       />
 
-      {/* Niva branding — visible only on initial map screen */}
+      {/* Niva branding + language toggle */}
       {state === "MAP_SELECT" && (
-        <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
-          <span className="text-text-primary font-semibold text-sm tracking-wide">Niva</span>
-          <span className="text-text-tertiary text-xs">· Parametric Crop Insurance</span>
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-3">
+          <span className="text-text-primary font-semibold text-sm tracking-wide">{t("map.title")}</span>
+          <span className="text-text-tertiary text-xs">· {t("map.subtitle")}</span>
+          <LanguageToggle />
         </div>
       )}
 
@@ -95,7 +99,7 @@ export default function Home() {
           exit={{ opacity: 0, x: -10 }}
         >
           <ArrowLeft className="w-3 h-3" />
-          Back
+          {t("back")}
         </motion.button>
       )}
 

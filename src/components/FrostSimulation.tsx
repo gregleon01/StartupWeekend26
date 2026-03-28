@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, RotateCcw } from "lucide-react";
 import type { ParametricContract } from "@/types";
 import { generateSimulationData } from "@/lib/frostAnalysis";
+import { useLocale } from "@/lib/i18n";
 import TemperatureGauge from "./TemperatureGauge";
 import PayoutNotification from "./PayoutNotification";
 import WhatsAppMock from "./WhatsAppMock";
@@ -17,6 +18,7 @@ interface FrostSimulationProps {
 type SimPhase = "darkening" | "coldfront" | "tempdrop" | "counting" | "payout";
 
 export default function FrostSimulation({ contract, onExit }: FrostSimulationProps) {
+  const { t } = useLocale();
   const [phase, setPhase] = useState<SimPhase>("darkening");
   const [temperature, setTemperature] = useState(4.2); // Real start: 4.2°C at sunset
   const [breachHours, setBreachHours] = useState(0);
@@ -148,7 +150,7 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
                    hover:bg-bg-secondary transition-all cursor-pointer pointer-events-auto"
       >
         <X className="w-3 h-3" />
-        Exit
+        {t("sim.exit")}
       </button>
 
       {/* Context label — visible during early phases */}
@@ -162,7 +164,7 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
           >
             <div className="px-3 py-1.5 bg-bg-secondary/80 backdrop-blur-md border border-border-subtle rounded-lg">
               <p className="text-text-tertiary text-xs uppercase tracking-widest">
-                Frost Event Simulation
+                {t("sim.title")}
               </p>
             </div>
           </motion.div>
@@ -260,7 +262,7 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
               <p className="text-frost-blue text-xs font-mono mb-2">{simTime}</p>
             )}
             <p className="text-text-tertiary text-xs uppercase tracking-wider mb-1">
-              Hours below {contract.threshold}°C
+              {t("sim.hoursBelow")} {contract.threshold}°C
             </p>
             <p className="font-mono text-3xl font-bold tabular-nums">
               <span className={triggerFired ? "text-accent-amber" : "text-text-primary"}>
@@ -277,7 +279,7 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
-                Trigger Activated
+                {t("sim.triggered")}
               </motion.p>
             )}
           </motion.div>
@@ -318,13 +320,13 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
                          hover:text-text-primary hover:bg-bg-secondary transition-all cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              Try another field
+              {t("sim.restart")}
             </button>
             <button
               className="px-5 py-2.5 bg-accent-amber text-bg-primary rounded-xl text-sm
                          font-semibold hover:brightness-110 transition-all cursor-pointer"
             >
-              Get insured
+              {t("sim.insure")}
             </button>
           </motion.div>
         )}
