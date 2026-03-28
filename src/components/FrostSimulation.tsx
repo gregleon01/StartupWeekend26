@@ -8,7 +8,6 @@ import { generateSimulationData } from "@/lib/frostAnalysis";
 import { useLocale } from "@/lib/i18n";
 import TemperatureGauge from "./TemperatureGauge";
 import PayoutNotification from "./PayoutNotification";
-import WhatsAppMock from "./WhatsAppMock";
 
 interface FrostSimulationProps {
   contract: ParametricContract;
@@ -27,7 +26,6 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
   const [breached, setBreached] = useState(false);
   const [triggerFired, setTriggerFired] = useState(false);
   const [showPayout, setShowPayout] = useState(false);
-  const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [showVignette, setShowVignette] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
   const [minTemp, setMinTemp] = useState(4.2);
@@ -127,15 +125,6 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
       stepTemp();
     }, 4000);
 
-    // WhatsApp notification 2s after payout card appears
-    schedule(() => {
-      setShowWhatsApp(true);
-    }, 15500);
-
-    // Auto-dismiss WhatsApp after 5s
-    schedule(() => {
-      setShowWhatsApp(false);
-    }, 20500);
   }, [contract, schedule, breached]);
 
   return (
@@ -294,13 +283,6 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
             minTemp={minTemp}
             breachHours={breachHours}
           />
-        )}
-      </AnimatePresence>
-
-      {/* WhatsApp notification */}
-      <AnimatePresence>
-        {showWhatsApp && (
-          <WhatsAppMock amount={contract.payoutPerHectare} />
         )}
       </AnimatePresence>
 
