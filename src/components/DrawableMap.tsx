@@ -7,6 +7,7 @@ import type { FarmerParcel, CropKey } from "@/types";
 import { contracts } from "@/lib/contracts";
 import { useLocale } from "@/lib/i18n";
 import WeatherOverlay, { type OverlayMode } from "./WeatherOverlay";
+import { detectFieldPolygon } from "@/lib/floodSelect";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
@@ -59,6 +60,7 @@ export default function DrawableMap({
   const [drawPoints, setDrawPoints] = useState<[number, number][]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const justCompleted = useRef(false);
+  const [smartMode, setSmartMode] = useState(false);
 
   // Build GeoJSON for completed parcels
   const parcelsGeoJSON = {
@@ -117,9 +119,35 @@ export default function DrawableMap({
     [onPolygonComplete],
   );
 
+  const smartDetect = useCallback(
+    (e: mapboxgl.MapLayerMouseEvent) => {
+      if (!mapRef.current || justCompleted.current) return;
+      const map = mapRef.current.getMap();
+      const canvas = map.getCanvas();
+      // Mapbox canvas may be scaled (retina) — use CSS pixel position
+      const ratio = window.devicePixelRatio || 1;
+      const coords = detectFieldPolygon(
+        canvas,
+        e.point.x * ratio,
+        e.point.y * ratio,
+        (pt) => map.unproject([pt[0] / ratio, pt[1] / ratio]),
+        38, // color tolerance
+      );
+      if (coords && coords.length >= 3) {
+        completePolygon(coords);
+      }
+    },
+    [completePolygon],
+  );
+
   const handleClick = useCallback(
     (e: mapboxgl.MapLayerMouseEvent) => {
       if (!drawingEnabled || justCompleted.current) return;
+
+      if (smartMode) {
+        smartDetect(e);
+        return;
+      }
 
       const point: [number, number] = [e.lngLat.lng, e.lngLat.lat];
 
@@ -146,7 +174,7 @@ export default function DrawableMap({
 
       setDrawPoints((prev) => [...prev, point]);
     },
-    [drawingEnabled, isDrawing, drawPoints, completePolygon],
+    [drawingEnabled, isDrawing, drawPoints, completePolygon, smartMode, smartDetect],
   );
 
   // Double-click to close polygon
@@ -209,8 +237,9 @@ export default function DrawableMap({
         mapboxAccessToken={MAPBOX_TOKEN}
         mapStyle="mapbox://styles/mapbox/satellite-streets-v12"
         style={{ width: "100%", height: "100%" }}
-        cursor={drawingEnabled ? "crosshair" : "default"}
+        cursor={drawingEnabled ? (smartMode ? "pointer" : "crosshair") : "default"}
         doubleClickZoom={!drawingEnabled}
+        preserveDrawingBuffer={true}
       >
         <WeatherOverlay
           showControls={false}
@@ -336,6 +365,27 @@ export default function DrawableMap({
         )}
       </AnimatePresence>
 
+      {/* Mode toggle — bottom center */}
+      {drawingEnabled && !isDrawing && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex bg-black/40 backdrop-blur-xl border border-white/15 rounded-full p-1 shadow-xl">
+          <button
+            onClick={() => setSmartMode(false)}
+            className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              !smartMode ? "bg-white text-black shadow-sm" : "text-white/60 hover:text-white"
+            }`}
+          >
+            ✏️ Draw
+          </button>
+          <button
+            onClick={() => setSmartMode(true)}
+            className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              smartMode ? "bg-accent-amber text-black shadow-sm" : "text-white/60 hover:text-white"
+            }`}
+          >
+            ✨ Auto-detect
+          </button>
+        </div>
+      )}
     </div>
   );
 }
