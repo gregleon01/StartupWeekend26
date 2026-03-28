@@ -139,7 +139,7 @@ export default function FarmerPage() {
 
       {/* Unified top bar pill — two rows */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 w-[480px]
-                      bg-white/10 backdrop-blur-xl border border-white/20 rounded-full
+                      bg-white/8 backdrop-blur-xl border border-white/12 rounded-full
                       overflow-hidden shadow-xl">
 
         {/* Row 1: context label */}
@@ -161,7 +161,7 @@ export default function FarmerPage() {
         </div>
 
         {/* Horizontal divider */}
-        <div className="h-px bg-white/10 mx-4" />
+        <div className="h-px bg-white/8 mx-4" />
 
         {/* Row 2: actions */}
         <div className="grid grid-cols-3 items-center">
