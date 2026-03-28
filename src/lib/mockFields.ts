@@ -12,13 +12,38 @@ function seededRandom(seed: number) {
 
 const crops: CropKey[] = ["cherries", "grapes", "wheat", "sunflower"];
 
+const payoutAmounts: Record<CropKey, number> = {
+  cherries: 340,
+  grapes: 280,
+  wheat: 180,
+  sunflower: 220,
+};
+
 /**
  * Generates 207 mock fields scattered across the Kyustendil region.
- * 15 fields have active payout triggers (simulating a recent frost).
- * Deterministic — same data every render.
+ *
+ * Field positions, crops, hectares, coverage and risk scores are always
+ * deterministic (seed 42). Trigger status is driven by real historical
+ * trigger rates from the FSM when provided — replacing the old hardcoded
+ * "first 15 fields trigger" logic with rates derived from actual weather data.
+ *
+ * A separate seeded random (seed 43) is used exclusively for trigger rolls
+ * so that passing different triggerRates never shifts field positions.
  */
-export function generateMockFields(): MockField[] {
-  const rand = seededRandom(42);
+export function generateMockFields(
+  triggerRates?: Record<CropKey, number>,
+): MockField[] {
+  const rand = seededRandom(42);        // positions, crops, properties
+  const randTrigger = seededRandom(43); // trigger decisions only
+
+  // Effective rates: real historical data if available, conservative fallback otherwise
+  const rates: Record<CropKey, number> = triggerRates ?? {
+    cherries: 0.36,
+    grapes: 0.27,
+    wheat: 0.18,
+    sunflower: 0.27,
+  };
+
   const fields: MockField[] = [];
 
   // Kyustendil bounding box
@@ -34,13 +59,9 @@ export function generateMockFields(): MockField[] {
     const hectares = +(1 + rand() * 12).toFixed(1);
     const covered = rand() > 0.12; // ~88% coverage rate
     const riskScore = +(rand() * 100).toFixed(0);
-    const payoutTriggered = i < 15; // first 15 have triggered payouts
-    const payoutAmounts: Record<CropKey, number> = {
-      cherries: 340,
-      grapes: 280,
-      wheat: 180,
-      sunflower: 220,
-    };
+
+    // Trigger determined by real historical rate for this crop, not position
+    const payoutTriggered = covered && randTrigger() < rates[crop];
 
     fields.push({
       id: i + 1,
@@ -50,7 +71,7 @@ export function generateMockFields(): MockField[] {
       hectares,
       covered,
       riskScore: +riskScore,
-      payoutTriggered: covered && payoutTriggered,
+      payoutTriggered,
       payoutAmount: payoutTriggered ? payoutAmounts[crop] : 0,
       stationZone: assignStationZone(lat, lng),
     });

@@ -2,10 +2,11 @@
 
 import { useMemo, useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Shield, TrendingUp, MapPin, AlertTriangle, Banknote, BarChart3 } from "lucide-react";
+import { Shield, TrendingUp, MapPin, AlertTriangle, Banknote, BarChart3, Radio } from "lucide-react";
 import { generateMockFields, computeFieldStats } from "@/lib/mockFields";
 import { computePortfolioRisk } from "@/lib/statistics";
 import { contracts } from "@/lib/contracts";
+import { usePortfolioWeather } from "@/hooks/usePortfolioWeather";
 import type { CropKey } from "@/types";
 import InsuredFieldsMap from "@/components/InsuredFieldsMap";
 
@@ -43,7 +44,13 @@ const RECENT_ACTIVITY = [
 ];
 
 export default function DashboardPage() {
-  const fields = useMemo(() => generateMockFields(), []);
+  const { triggerRates, loading: weatherLoading, isLiveData } = usePortfolioWeather();
+
+  // Regenerate fields whenever real trigger rates arrive from the FSM
+  const fields = useMemo(
+    () => generateMockFields(triggerRates),
+    [triggerRates],
+  );
   const stats = useMemo(() => computeFieldStats(fields), [fields]);
   const portfolio = useMemo(() => computePortfolioRisk(fields), [fields]);
 
@@ -71,6 +78,17 @@ export default function DashboardPage() {
             <span className="text-text-secondary text-xs">
               Kyustendil Region
             </span>
+            <span className="text-text-tertiary text-xs">&middot;</span>
+            {weatherLoading ? (
+              <span className="text-text-tertiary text-xs animate-pulse">
+                Loading historical data…
+              </span>
+            ) : (
+              <span className={`flex items-center gap-1 text-xs ${isLiveData ? "text-success-green" : "text-text-tertiary"}`}>
+                <Radio className="w-3 h-3" />
+                {isLiveData ? "Live historical data · Open-Meteo 2015–2025" : "Fallback rates"}
+              </span>
+            )}
           </div>
         </div>
 
