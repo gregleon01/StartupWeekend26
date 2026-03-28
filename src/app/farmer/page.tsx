@@ -159,20 +159,16 @@ export default function FarmerPage() {
         Aklima
       </Link>
 
-      {/* Unified top bar pill — two rows */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40
-                      bg-white/8 backdrop-blur-xl border border-white/12 rounded-full
-                      overflow-hidden shadow-xl">
-
-        {/* Row 1: context label */}
-        <div className="px-10 pt-2 pb-1.5 text-center whitespace-nowrap">
-          <motion.p
-            key={state}
-            className="text-white text-sm font-medium tracking-wide"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
+      {/* State label — centered chip at top */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40">
+        <motion.div
+          key={state}
+          className="px-5 py-2 bg-white/8 backdrop-blur-xl border border-white/12 rounded-full shadow-xl whitespace-nowrap"
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <p className="text-white text-sm font-medium tracking-wide">
             {state === "ONBOARDING" && (locale === "bg" ? "Добре дошли" : "Welcome")}
             {state === "DRAWING" && (locale === "bg" ? "Начертайте полето" : "Draw your field boundary")}
             {state === "ASSIGN_CROP" && (locale === "bg" ? "Изберете култура" : "Select crop")}
@@ -180,67 +176,70 @@ export default function FarmerPage() {
             {state === "HISTORY" && (locale === "bg" ? "Исторически анализ" : "Frost history")}
             {state === "COVERAGE" && (locale === "bg" ? "Покритие" : "Coverage")}
             {state === "SIMULATION" && (locale === "bg" ? "Симулация" : "Simulation")}
-          </motion.p>
-        </div>
+          </p>
+        </motion.div>
+      </div>
 
-        {/* Horizontal divider */}
-        <div className="h-px bg-white/8 mx-4" />
+      {/* Vertical icon pill — right side */}
+      <div className="absolute top-1/2 -translate-y-1/2 right-4 z-40
+                      flex flex-col items-center gap-1 py-3 px-2
+                      bg-white/8 backdrop-blur-xl border border-white/12 rounded-3xl shadow-xl">
 
-        {/* Row 2: actions */}
-        <div className="flex items-center justify-center gap-1 px-3 pb-1">
-          {/* Back — in-flow navigation */}
-          <AnimatePresence>
-            {showBack && (
-              <motion.button
-                onClick={handleBack}
-                className="flex items-center gap-1 px-4 py-1.5 text-white/70 text-xs font-medium
-                           hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer outline-none whitespace-nowrap"
-                initial={{ opacity: 0, x: -6 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -6 }}
-                transition={{ duration: 0.15 }}
-              >
-                <ArrowLeft className="w-3 h-3" />
-                {locale === "bg" ? "Назад" : "Back"}
-              </motion.button>
-            )}
-          </AnimatePresence>
+        {/* Back */}
+        <AnimatePresence>
+          {showBack && (
+            <motion.button
+              onClick={handleBack}
+              className="w-9 h-9 flex items-center justify-center rounded-2xl
+                         text-white/60 hover:text-white hover:bg-white/12 transition-all cursor-pointer outline-none"
+              title={locale === "bg" ? "Назад" : "Back"}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.15 }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </motion.button>
+          )}
+        </AnimatePresence>
 
-          {/* Divider — only when Back is visible */}
-          {showBack && <div className="w-px h-3.5 bg-white/12 mx-1" />}
+        {/* Divider */}
+        {showBack && <div className="w-5 h-px bg-white/12" />}
 
-          {/* Layers */}
-          <button
-            onClick={() => setWeatherOpen((o) => !o)}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-white/70 text-xs
-                       hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer outline-none"
-          >
-            {weatherMode === "none" && <Layers className="w-3.5 h-3.5" />}
-            {weatherMode === "clouds" && <Cloud className="w-3.5 h-3.5" />}
-            {weatherMode === "radar" && <CloudRain className="w-3.5 h-3.5" />}
-            {weatherMode === "temperature" && <Thermometer className="w-3.5 h-3.5" />}
-            <span>{weatherMode === "none" ? "Layers" : weatherMode.charAt(0).toUpperCase() + weatherMode.slice(1)}</span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${weatherOpen ? "rotate-180" : ""}`} />
-          </button>
+        {/* Layers */}
+        <button
+          onClick={() => setWeatherOpen((o) => !o)}
+          className={`w-9 h-9 flex items-center justify-center rounded-2xl transition-all cursor-pointer outline-none
+            ${weatherOpen || weatherMode !== "none"
+              ? "bg-white/16 text-white"
+              : "text-white/60 hover:text-white hover:bg-white/12"}`}
+          title="Layers"
+        >
+          {weatherMode === "none" && <Layers className="w-4 h-4" />}
+          {weatherMode === "clouds" && <Cloud className="w-4 h-4" />}
+          {weatherMode === "radar" && <CloudRain className="w-4 h-4" />}
+          {weatherMode === "temperature" && <Thermometer className="w-4 h-4" />}
+        </button>
 
-          {/* Divider */}
-          <div className="w-px h-3.5 bg-white/12 mx-1" />
+        {/* Divider */}
+        <div className="w-5 h-px bg-white/12" />
 
-          {/* Language */}
+        {/* Language */}
+        <div className="w-9 h-9 flex items-center justify-center">
           <LanguageToggle />
         </div>
       </div>
 
-      {/* Weather dropdown */}
+      {/* Weather flyout — appears to the left of the vertical pill */}
       <AnimatePresence>
         {weatherOpen && (
           <motion.div
-            className="absolute top-[96px] left-1/2 -translate-x-1/2 z-40 w-44
+            className="absolute top-1/2 -translate-y-1/2 right-16 z-40 w-40
                        bg-white/8 backdrop-blur-xl border border-white/12 rounded-2xl
                        overflow-hidden shadow-xl"
-            initial={{ opacity: 0, y: -6, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.96 }}
+            initial={{ opacity: 0, x: 8, scale: 0.96 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 8, scale: 0.96 }}
             transition={{ duration: 0.12 }}
           >
             {([
