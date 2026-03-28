@@ -71,6 +71,8 @@ export default function FarmerPage() {
         centroid: cent,
       };
       setParcels((prev) => [...prev, parcel]);
+      // Fetch enrichment for the first parcel added so it shows in PARCELS state
+      if (!enrichment) enrichField(cent).then(setEnrichment);
       setPendingCoords(null);
       setPendingHectares(0);
       setState("PARCELS");
@@ -279,9 +281,9 @@ export default function FarmerPage() {
         )}
       </AnimatePresence>
 
-      {/* Field info bar when viewing analysis */}
-      {activeParcel && enrichment && (state === "HISTORY" || state === "COVERAGE") && (
-        <FieldInfoBar pin={activeParcel.centroid} enrichment={enrichment} />
+      {/* Field info bar — shown in PARCELS (your fields) state */}
+      {enrichment && state === "PARCELS" && (
+        <FieldInfoBar pin={parcels[0]?.centroid ?? { lat: 0, lng: 0 }} enrichment={enrichment} />
       )}
 
       {/* Parcel sidebar — visible only in PARCELS state (drawing still works on the map) */}
