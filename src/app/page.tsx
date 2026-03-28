@@ -115,8 +115,18 @@ function RoleCard({
     <motion.div
       className="h-full"
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, type: "spring", damping: 20 }}
+      animate={{ opacity: 1, y: [0, -8, 0] }}
+      transition={{
+        opacity: { duration: 0.5, delay },
+        y: {
+          delay: delay + 0.5,
+          duration: 3.5,
+          repeat: Infinity,
+          repeatType: "loop",
+          ease: "easeInOut",
+          times: [0, 0.5, 1],
+        },
+      }}
     >
       <Link href={href} className="h-full block">
         <div
