@@ -1,0 +1,138 @@
+"use client";
+
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { User, MapPin, ArrowRight } from "lucide-react";
+import { useLocale } from "@/lib/i18n";
+
+interface FarmerOnboardingProps {
+  name: string;
+  address: string;
+  onNameChange: (name: string) => void;
+  onAddressChange: (address: string) => void;
+  onContinue: () => void;
+}
+
+export default function FarmerOnboarding({
+  name,
+  address,
+  onNameChange,
+  onAddressChange,
+  onContinue,
+}: FarmerOnboardingProps) {
+  const { locale } = useLocale();
+  const [focused, setFocused] = useState<string | null>(null);
+
+  const canContinue = name.trim().length >= 2;
+
+  return (
+    <motion.div
+      className="absolute inset-0 z-30 flex items-center justify-center px-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+
+      <motion.div
+        className="relative w-full max-w-[420px] bg-bg-secondary/85 backdrop-blur-2xl border border-border-subtle rounded-2xl p-7 shadow-2xl"
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 40, opacity: 0 }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+      >
+        {/* Header */}
+        <div className="text-center mb-6">
+          <p className="text-text-primary text-lg font-semibold">
+            {locale === "bg" ? "Здравейте!" : "Welcome!"}
+          </p>
+          <p className="text-text-secondary text-sm mt-1">
+            {locale === "bg"
+              ? "Кажете ни за вашето стопанство"
+              : "Tell us about your farm"}
+          </p>
+        </div>
+
+        {/* Form */}
+        <div className="space-y-4">
+          {/* Name */}
+          <div>
+            <label className="text-text-tertiary text-xs uppercase tracking-wider block mb-1.5">
+              {locale === "bg" ? "Вашето име" : "Your name"}
+            </label>
+            <div
+              className={`flex items-center gap-3 px-4 py-3 bg-bg-tertiary/50 rounded-xl border transition-colors ${
+                focused === "name"
+                  ? "border-accent-amber/50"
+                  : "border-border-subtle"
+              }`}
+            >
+              <User className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => onNameChange(e.target.value)}
+                onFocus={() => setFocused("name")}
+                onBlur={() => setFocused(null)}
+                placeholder={locale === "bg" ? "Иван Петров" : "Ivan Petrov"}
+                className="flex-1 bg-transparent text-text-primary text-sm outline-none placeholder:text-text-tertiary/50"
+              />
+            </div>
+          </div>
+
+          {/* Address */}
+          <div>
+            <label className="text-text-tertiary text-xs uppercase tracking-wider block mb-1.5">
+              {locale === "bg" ? "Адрес на стопанството" : "Farm address"}
+              <span className="text-text-tertiary/50 ml-1 normal-case tracking-normal">
+                ({locale === "bg" ? "по избор" : "optional"})
+              </span>
+            </label>
+            <div
+              className={`flex items-center gap-3 px-4 py-3 bg-bg-tertiary/50 rounded-xl border transition-colors ${
+                focused === "address"
+                  ? "border-accent-amber/50"
+                  : "border-border-subtle"
+              }`}
+            >
+              <MapPin className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => onAddressChange(e.target.value)}
+                onFocus={() => setFocused("address")}
+                onBlur={() => setFocused(null)}
+                placeholder={locale === "bg" ? "с. Граница, Кюстендил" : "Granitsa, Kyustendil"}
+                className="flex-1 bg-transparent text-text-primary text-sm outline-none placeholder:text-text-tertiary/50"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Info */}
+        <p className="text-text-tertiary text-xs mt-4 leading-relaxed text-center">
+          {locale === "bg"
+            ? "След това ще начертаете полетата си на картата и ще изберете култура за всяко."
+            : "Next, you'll draw your fields on the map and assign a crop to each one."}
+        </p>
+
+        {/* CTA */}
+        <motion.button
+          onClick={onContinue}
+          disabled={!canContinue}
+          className={`w-full flex items-center justify-center gap-2 mt-6 py-3.5 rounded-xl text-sm font-semibold
+                     transition-all cursor-pointer ${
+                       canContinue
+                         ? "bg-accent-amber text-bg-primary hover:brightness-110"
+                         : "bg-bg-tertiary text-text-tertiary cursor-not-allowed"
+                     }`}
+          whileTap={canContinue ? { scale: 0.98 } : undefined}
+        >
+          {locale === "bg" ? "Начертай полетата" : "Draw my fields"}
+          <ArrowRight className="w-4 h-4" />
+        </motion.button>
+      </motion.div>
+    </motion.div>
+  );
+}

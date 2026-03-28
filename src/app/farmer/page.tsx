@@ -14,6 +14,7 @@ import { useLocale } from "@/lib/i18n";
 import LanguageToggle from "@/components/LanguageToggle";
 import { type OverlayMode } from "@/components/WeatherOverlay";
 import { Cloud, CloudRain, Thermometer, Layers, ChevronDown } from "lucide-react";
+import FarmerOnboarding from "@/components/FarmerOnboarding";
 import DrawableMap from "@/components/DrawableMap";
 import ParcelCropSheet from "@/components/ParcelCropSheet";
 import ParcelSidebar from "@/components/ParcelSidebar";
@@ -23,6 +24,7 @@ import CoverageCard from "@/components/CoverageCard";
 import FrostSimulation from "@/components/FrostSimulation";
 
 type FarmerState =
+  | "ONBOARDING"     // Farmer enters name + farm info
   | "DRAWING"        // Drawing polygon on map
   | "ASSIGN_CROP"    // Polygon drawn, pick crop
   | "PARCELS"        // Viewing all parcels, can add more
@@ -32,7 +34,9 @@ type FarmerState =
 
 export default function FarmerPage() {
   const { locale } = useLocale();
-  const [state, setState] = useState<FarmerState>("DRAWING");
+  const [state, setState] = useState<FarmerState>("ONBOARDING");
+  const [farmerName, setFarmerName] = useState("");
+  const [farmAddress, setFarmAddress] = useState("");
   const [parcels, setParcels] = useState<FarmerParcel[]>([]);
   const [pendingCoords, setPendingCoords] = useState<[number, number][] | null>(null);
   const [pendingHectares, setPendingHectares] = useState(0);
@@ -72,23 +76,28 @@ export default function FarmerPage() {
     [pendingCoords, pendingHectares],
   );
 
+  // Stay in PARCELS — drawing is enabled there too, sidebar stays visible
   const handleAddMore = useCallback(() => {
-    setState("DRAWING");
+    setState("PARCELS");
   }, []);
 
-  // Continue to coverage analysis — use the first/largest parcel
+  // Analyze the most valuable parcel (highest payout × hectares)
+  // The CoverageCard already shows the full multi-parcel breakdown
   const handleContinue = useCallback(() => {
     if (parcels.length === 0) return;
-    // Pick the largest parcel for the demo
-    const largest = [...parcels].sort((a, b) => b.hectares - a.hectares)[0];
-    setActiveParcel(largest);
-    const c = contracts[largest.crop];
+    const mostValuable = [...parcels].sort(
+      (a, b) =>
+        b.hectares * contracts[b.crop].payoutPerHectare -
+        a.hectares * contracts[a.crop].payoutPerHectare,
+    )[0];
+    setActiveParcel(mostValuable);
+    const c = contracts[mostValuable.crop];
     setContract(c);
     setState("HISTORY");
 
-    // Enrich and fetch weather for the parcel centroid
-    enrichField(largest.centroid).then(setEnrichment);
-    weather.fetchAndAnalyze(largest.centroid.lat, largest.centroid.lng, c);
+    // Enrich and fetch weather for this parcel's centroid
+    enrichField(mostValuable.centroid).then(setEnrichment);
+    weather.fetchAndAnalyze(mostValuable.centroid.lat, mostValuable.centroid.lng, c);
   }, [parcels, weather]);
 
   // Remove a parcel
@@ -104,11 +113,13 @@ export default function FarmerPage() {
     setActiveParcel(null);
     setContract(null);
     setEnrichment(null);
-    setState("DRAWING");
+    setState("ONBOARDING");
   }, []);
 
   const handleBack = useCallback(() => {
-    if (state === "ASSIGN_CROP") {
+    if (state === "DRAWING") {
+      setState("ONBOARDING");
+    } else if (state === "ASSIGN_CROP") {
       setPendingCoords(null);
       setState(parcels.length > 0 ? "PARCELS" : "DRAWING");
     } else if (state === "PARCELS") {
@@ -122,8 +133,8 @@ export default function FarmerPage() {
     }
   }, [state, parcels.length]);
 
-  const drawingEnabled = state === "DRAWING";
-  const showBack = state === "ASSIGN_CROP" || state === "PARCELS" || state === "HISTORY" || state === "COVERAGE";
+  const drawingEnabled = state === "DRAWING" || state === "PARCELS";
+  const showBack = state === "DRAWING" || state === "ASSIGN_CROP" || state === "PARCELS" || state === "HISTORY" || state === "COVERAGE";
   const mapDimmed = state === "ASSIGN_CROP" || state === "COVERAGE";
 
   return (
@@ -151,6 +162,7 @@ export default function FarmerPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
           >
+            {state === "ONBOARDING" && (locale === "bg" ? "Добре дошли" : "Welcome")}
             {state === "DRAWING" && (locale === "bg" ? "Начертайте полето" : "Draw your field boundary")}
             {state === "ASSIGN_CROP" && (locale === "bg" ? "Изберете култура" : "Select crop")}
             {state === "PARCELS" && (locale === "bg" ? "Вашите полета" : "Your fields")}
@@ -271,6 +283,18 @@ export default function FarmerPage() {
       )}
 
       <AnimatePresence mode="wait">
+        {/* Farmer onboarding */}
+        {state === "ONBOARDING" && (
+          <FarmerOnboarding
+            key="onboarding"
+            name={farmerName}
+            address={farmAddress}
+            onNameChange={setFarmerName}
+            onAddressChange={setFarmAddress}
+            onContinue={() => setState("DRAWING")}
+          />
+        )}
+
         {/* Crop assignment after polygon drawn */}
         {state === "ASSIGN_CROP" && (
           <ParcelCropSheet
