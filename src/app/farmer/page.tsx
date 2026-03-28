@@ -68,9 +68,9 @@ export default function FarmerPage() {
     [pendingCoords, pendingHectares],
   );
 
-  // Add another field
+  // Add another field — stay in PARCELS (drawing is still enabled)
   const handleAddMore = useCallback(() => {
-    setState("DRAWING");
+    setState("PARCELS");
   }, []);
 
   // Continue to coverage analysis — use the first/largest parcel
@@ -165,8 +165,8 @@ export default function FarmerPage() {
         <FieldInfoBar pin={activeParcel.centroid} enrichment={enrichment} />
       )}
 
-      {/* Parcel sidebar — visible when we have parcels and in drawing/parcels mode */}
-      {parcels.length > 0 && (state === "DRAWING" || state === "PARCELS") && (
+      {/* Parcel sidebar — visible only in PARCELS state (drawing still works on the map) */}
+      {parcels.length > 0 && state === "PARCELS" && (
         <ParcelSidebar
           parcels={parcels}
           onAddMore={handleAddMore}
