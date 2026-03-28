@@ -28,14 +28,13 @@ export default function ParcelCropSheet({ hectares, onSelect }: ParcelCropSheetP
 
   return (
     <motion.div
-      className="absolute inset-x-0 bottom-0 z-30"
-      initial={{ y: "100%" }}
-      animate={{ y: 0 }}
-      exit={{ y: "100%" }}
-      transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
+      className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 w-full max-w-md px-4"
+      initial={{ y: 24, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 24, opacity: 0 }}
+      transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
     >
-      <div className="bg-white/8 backdrop-blur-xl border-t border-white/12 rounded-t-3xl px-6 pt-5 pb-8">
-        <div className="w-10 h-1 bg-text-tertiary/40 rounded-full mx-auto mb-4" />
+      <div className="bg-white/8 backdrop-blur-xl border border-white/12 rounded-3xl px-6 pt-5 pb-5 shadow-2xl">
 
         <div className="text-center mb-5">
           <p className="text-accent-amber font-mono text-2xl font-bold">
