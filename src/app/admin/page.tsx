@@ -114,6 +114,25 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<"claims"|"risk"|"forecast">("claims");
   const [selectedField, setSelectedField] = useState<MockField | null>(null);
 
+  // Draggable panel height
+  const [panelH, setPanelH] = useState(44); // vh
+  const dragging = useRef(false);
+  const dragStart = useRef(0);
+  const dragStartH = useRef(44);
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!dragging.current) return;
+      const delta = dragStart.current - e.clientY;
+      const vh = delta / window.innerHeight * 100;
+      setPanelH(Math.min(85, Math.max(25, dragStartH.current + vh)));
+    };
+    const onUp = () => { dragging.current = false; };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); };
+  }, []);
+
   const doSim = useCallback(() => {
     if (simming) return;
     setSimming(true); setSimProg(0);
@@ -126,8 +145,8 @@ export default function AdminPage() {
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-bg-primary">
-      {/* Map — upper portion */}
-      <div className="absolute inset-0 bottom-[42vh]">
+      {/* Map — upper portion (dynamic based on panel height) */}
+      <div className="absolute inset-0" style={{ bottom: `${panelH}vh` }}>
         <InsuredFieldsMap fields={fields} />
       </div>
 
@@ -135,7 +154,8 @@ export default function AdminPage() {
       <AnimatePresence>
         {simming && (
           <motion.div
-            className="absolute inset-0 bottom-[42vh] z-20 pointer-events-none"
+            className="absolute inset-0 z-20 pointer-events-none"
+            style={{ bottom: `${panelH}vh` }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -174,12 +194,25 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Bottom panel */}
+      {/* Bottom panel — draggable */}
       <motion.div
-        className="absolute left-0 right-0 bottom-0 h-[44vh] z-30 bg-white/6 backdrop-blur-2xl border-t border-white/10 shadow-2xl"
+        className="absolute left-0 right-0 bottom-0 z-30 bg-white/6 backdrop-blur-2xl border-t border-white/10 shadow-2xl"
+        style={{ height: `${panelH}vh` }}
         initial={{ y: "100%" }} animate={{ y: 0 }}
         transition={{ type: "tween", duration: 0.35, ease: "easeOut", delay: 0.1 }}
       >
+        {/* Drag handle */}
+        <div
+          className="flex justify-center py-1.5 cursor-ns-resize select-none"
+          onPointerDown={(e) => {
+            dragging.current = true;
+            dragStart.current = e.clientY;
+            dragStartH.current = panelH;
+          }}
+        >
+          <div className="w-10 h-1 bg-white/20 rounded-full hover:bg-white/40 transition-colors" />
+        </div>
+
         {/* Stats bar */}
         <div className="flex items-center gap-4 px-6 py-2.5 border-b border-white/8 overflow-x-auto text-xs">
           <Stat icon={<Users className="w-3.5 h-3.5" />} v={aF} l="Fields" />
@@ -260,81 +293,162 @@ export default function AdminPage() {
             )}
 
             {activeTab === "risk" && (
-              <motion.div key="risk" className="grid grid-cols-3 gap-5 p-5"
+              <motion.div key="risk" className="p-5 space-y-5"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                {/* Crop exposure */}
-                <div>
-                  <p className="text-white/40 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <Layers className="w-3 h-3" /> Crop Exposure
-                  </p>
-                  {crops.map((d, i) => (
-                    <div key={d.crop} className="mb-3">
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-white/60 flex items-center gap-1.5">
-                          {contracts[d.crop]?.icon} {contracts[d.crop]?.crop}
-                        </span>
-                        <span className="font-mono text-white font-bold text-[11px]">€{Math.round(d.total).toLocaleString()}</span>
-                      </div>
-                      <div className="h-2 bg-white/6 rounded-full overflow-hidden">
-                        <motion.div className="h-full rounded-full" style={{ backgroundColor: CROP_COLORS[d.crop] }}
-                          initial={{ width: 0 }} animate={{ width: `${d.total/maxCrop*100}%` }}
-                          transition={{ delay: .3 + i*.1, duration: .8, ease: "easeOut" }} />
-                      </div>
-                      <p className="text-white/25 text-[9px] mt-0.5">{d.fields} fields · {d.ha}ha · {d.count} triggered</p>
-                    </div>
-                  ))}
-                </div>
 
-                {/* Monthly heatmap */}
-                <div>
-                  <p className="text-white/40 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <BarChart3 className="w-3 h-3" /> Monthly Triggers
-                  </p>
-                  <svg width="100%" height="200" viewBox="0 0 240 200" preserveAspectRatio="xMidYMid meet">
-                    {months.map((c, i) => {
-                      const bw=16, gap=4, ch=170, x=i*(bw+gap), h=(c/maxMo)*ch, active=c>0;
-                      return (<g key={i}>
-                        <rect x={x} y={0} width={bw} height={ch} rx={4} fill="rgba(255,255,255,0.03)" />
-                        <motion.rect x={x} width={bw} rx={4}
-                          fill={active ? "#F5A623" : "transparent"} opacity={active ? .85 : .2}
-                          initial={{ height:0, y:ch }} animate={{ height:h, y:ch-h }}
-                          transition={{ delay:.15+i*.04, duration:.5 }} />
-                        <text x={x+bw/2} y={ch+14} textAnchor="middle"
-                          fill={active ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.15)"}
-                          fontSize="9" fontFamily="monospace">{MO[i]}</text>
-                      </g>);
-                    })}
-                  </svg>
-                </div>
-
-                {/* Portfolio metrics */}
-                <div>
-                  <p className="text-white/40 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <Shield className="w-3 h-3" /> Portfolio Metrics
-                  </p>
-                  <div className="space-y-3">
-                    <Metric l="Total Exposure" v={`€${portfolio.totalExposure.toLocaleString()}`} />
-                    <Metric l="Expected Annual" v={`€${portfolio.expectedAnnualPayout.toLocaleString()}`} />
-                    <Metric l="VaR 95%" v={`€${portfolio.valueAtRisk95.toLocaleString()}`} h />
-                    <Metric l="Max Possible" v={`€${portfolio.maxPossiblePayout.toLocaleString()}`} />
-                    <div className="h-px bg-white/8 my-1" />
-                    <Metric l="Correlation Zones" v={String(portfolio.correlationZones)} />
-                    <Metric l="Diversification" v={`${Math.round(portfolio.diversificationBenefit*100)}%`} />
-                    <div className="h-px bg-white/8 my-1" />
-                    <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1">Coverage</p>
-                    <div className="h-2 bg-white/6 rounded-full overflow-hidden">
-                      <motion.div className="h-full rounded-full bg-success-green"
-                        initial={{ width: 0 }} animate={{ width: `${covRate}%` }}
-                        transition={{ delay: .5, duration: .8 }} />
-                    </div>
-                    <p className="text-white/40 text-[10px]"><span className="font-mono text-white font-bold">{covRate}%</span> regional coverage</p>
+                {/* Row 1: 4 columns */}
+                <div className="grid grid-cols-4 gap-5">
+                  {/* Crop exposure bars */}
+                  <div>
+                    <p className="text-white/40 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <Layers className="w-3 h-3" /> Crop Exposure
+                    </p>
+                    {crops.map((d, i) => (
+                      <div key={d.crop} className="mb-3">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="text-white/60 flex items-center gap-1.5">
+                            {contracts[d.crop]?.icon} {contracts[d.crop]?.crop}
+                          </span>
+                          <span className="font-mono text-white font-bold text-[11px]">€{Math.round(d.total).toLocaleString()}</span>
+                        </div>
+                        <div className="h-2 bg-white/6 rounded-full overflow-hidden">
+                          <motion.div className="h-full rounded-full" style={{ backgroundColor: CROP_COLORS[d.crop] }}
+                            initial={{ width: 0 }} animate={{ width: `${d.total/maxCrop*100}%` }}
+                            transition={{ delay: .3 + i*.1, duration: .8, ease: "easeOut" }} />
+                        </div>
+                        <p className="text-white/25 text-[9px] mt-0.5">{d.fields} fields · {d.ha}ha · {d.count} triggered</p>
+                      </div>
+                    ))}
                   </div>
-                  <div className="mt-4 space-y-1">
-                    {[["#66BB6A","Covered"],["#F5A623","High risk"],["#EF5350","Triggered"],["#555","Uninsured"]].map(([c,l]) => (
-                      <div key={l} className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c }} />
-                        <span className="text-white/30 text-[9px]">{l}</span>
+
+                  {/* Crop distribution donut */}
+                  <div>
+                    <p className="text-white/40 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <Eye className="w-3 h-3" /> Crop Distribution
+                    </p>
+                    {(() => {
+                      const totalHa = crops.reduce((s,d) => s + d.ha, 0) || 1;
+                      let cum = 0;
+                      const r = 60, cx = 75, cy = 75;
+                      return (
+                        <div className="flex flex-col items-center">
+                          <svg width="150" height="150" viewBox="0 0 150 150">
+                            {crops.map((d, i) => {
+                              const pct = d.ha / totalHa;
+                              const start = cum * 2 * Math.PI - Math.PI/2;
+                              cum += pct;
+                              const end = cum * 2 * Math.PI - Math.PI/2;
+                              const large = pct > .5 ? 1 : 0;
+                              const x1 = cx + r * Math.cos(start), y1 = cy + r * Math.sin(start);
+                              const x2 = cx + r * Math.cos(end), y2 = cy + r * Math.sin(end);
+                              return (
+                                <motion.path key={d.crop}
+                                  d={`M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`}
+                                  fill={CROP_COLORS[d.crop]} opacity={.8}
+                                  initial={{ scale: 0 }} animate={{ scale: 1 }}
+                                  transition={{ delay: .2 + i*.1, duration: .5 }}
+                                  style={{ transformOrigin: `${cx}px ${cy}px` }} />
+                              );
+                            })}
+                            <circle cx={cx} cy={cy} r={35} fill="rgba(10,15,28,0.8)" />
+                            <text x={cx} y={cy-4} textAnchor="middle" fill="white" fontSize="16" fontWeight="bold" fontFamily="monospace">{totalHa}</text>
+                            <text x={cx} y={cy+10} textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="8">hectares</text>
+                          </svg>
+                          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 justify-center">
+                            {crops.map(d => (
+                              <div key={d.crop} className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: CROP_COLORS[d.crop] }} />
+                                <span className="text-white/40 text-[9px]">{contracts[d.crop]?.crop} {Math.round(d.ha/totalHa*100)}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Monthly heatmap */}
+                  <div>
+                    <p className="text-white/40 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <BarChart3 className="w-3 h-3" /> Monthly Triggers
+                    </p>
+                    <svg width="100%" height="200" viewBox="0 0 240 200" preserveAspectRatio="xMidYMid meet">
+                      {months.map((c, i) => {
+                        const bw=16, gap=4, ch=170, x=i*(bw+gap), h=(c/maxMo)*ch, active=c>0;
+                        return (<g key={i}>
+                          <rect x={x} y={0} width={bw} height={ch} rx={4} fill="rgba(255,255,255,0.03)" />
+                          <motion.rect x={x} width={bw} rx={4}
+                            fill={active ? "#F5A623" : "transparent"} opacity={active ? .85 : .2}
+                            initial={{ height:0, y:ch }} animate={{ height:h, y:ch-h }}
+                            transition={{ delay:.15+i*.04, duration:.5 }} />
+                          <text x={x+bw/2} y={ch+14} textAnchor="middle"
+                            fill={active ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.15)"}
+                            fontSize="9" fontFamily="monospace">{MO[i]}</text>
+                        </g>);
+                      })}
+                    </svg>
+                  </div>
+
+                  {/* Portfolio metrics + coverage */}
+                  <div>
+                    <p className="text-white/40 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <Shield className="w-3 h-3" /> Portfolio Metrics
+                    </p>
+                    <div className="space-y-2.5">
+                      <Metric l="Total Exposure" v={`€${portfolio.totalExposure.toLocaleString()}`} />
+                      <Metric l="Expected Annual" v={`€${portfolio.expectedAnnualPayout.toLocaleString()}`} />
+                      <Metric l="VaR 95%" v={`€${portfolio.valueAtRisk95.toLocaleString()}`} h />
+                      <Metric l="Max Possible" v={`€${portfolio.maxPossiblePayout.toLocaleString()}`} />
+                      <div className="h-px bg-white/8" />
+                      <Metric l="Correlation Zones" v={String(portfolio.correlationZones)} />
+                      <Metric l="Diversification" v={`${Math.round(portfolio.diversificationBenefit*100)}%`} />
+                      <div className="h-px bg-white/8" />
+                      <p className="text-white/30 text-[9px] uppercase tracking-wider">Coverage</p>
+                      <div className="h-2.5 bg-white/6 rounded-full overflow-hidden">
+                        <motion.div className="h-full rounded-full bg-success-green"
+                          initial={{ width: 0 }} animate={{ width: `${covRate}%` }}
+                          transition={{ delay: .5, duration: .8 }} />
                       </div>
+                      <p className="text-white/40 text-[10px]"><span className="font-mono text-white font-bold">{covRate}%</span> regional</p>
+                    </div>
+                    <div className="mt-3 space-y-1">
+                      {[["#66BB6A","Covered"],["#F5A623","High risk"],["#EF5350","Triggered"],["#555","Uninsured"]].map(([c,l]) => (
+                        <div key={l} className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c }} />
+                          <span className="text-white/30 text-[9px]">{l}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 2: Severity heatmap — crop × month grid */}
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <Droplets className="w-3 h-3" /> Severity Matrix · Crop × Month
+                  </p>
+                  <div className="grid gap-px" style={{ gridTemplateColumns: `80px repeat(12, 1fr)` }}>
+                    {/* Header row */}
+                    <div />
+                    {MO.map(m => <div key={m} className="text-center text-white/25 text-[8px] font-mono py-1">{m}</div>)}
+                    {/* Crop rows */}
+                    {(["cherries","grapes","wheat","sunflower"] as CropKey[]).map(crop => (
+                      <>
+                        <div key={crop} className="flex items-center gap-1.5 text-white/50 text-[10px] pr-2">
+                          {contracts[crop]?.icon} {contracts[crop]?.crop}
+                        </div>
+                        {MW[crop].map((w, mi) => {
+                          const intensity = w;
+                          return (
+                            <motion.div key={`${crop}-${mi}`}
+                              className="rounded-sm h-6"
+                              style={{ backgroundColor: intensity > 0 ? CROP_COLORS[crop] : "transparent", opacity: intensity > 0 ? .15 + intensity * .7 : .03 }}
+                              initial={{ scale: 0 }} animate={{ scale: 1 }}
+                              transition={{ delay: .1 + mi*.02 }}
+                            />
+                          );
+                        })}
+                      </>
                     ))}
                   </div>
                 </div>
