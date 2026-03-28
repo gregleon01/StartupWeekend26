@@ -137,72 +137,80 @@ export default function FarmerPage() {
         onWeatherModeChange={setWeatherMode}
       />
 
-      {/* Unified top bar pill */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center
-                      bg-black/40 backdrop-blur-md border border-white/15 rounded-full
-                      overflow-hidden shadow-lg">
-        {/* ← Aklima */}
-        <Link
-          href="/"
-          className="flex items-center gap-1.5 px-4 py-3 text-white/70 text-xs hover:text-white
-                     hover:bg-white/10 transition-all whitespace-nowrap outline-none"
-        >
-          <ArrowLeft className="w-3 h-3" />
-          Aklima
-        </Link>
+      {/* Unified top bar pill — two rows */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 w-[480px]
+                      bg-white/10 backdrop-blur-xl border border-white/20 rounded-full
+                      overflow-hidden shadow-xl">
 
-        {/* Divider */}
-        <div className="w-px h-5 bg-white/15" />
-
-        {/* Context label */}
-        <div className="px-4 py-3 text-xs text-white/80 whitespace-nowrap">
-          {state === "DRAWING" && (locale === "bg" ? "Начертайте полето" : "Draw your field boundary")}
-          {state === "ASSIGN_CROP" && (locale === "bg" ? "Изберете култура" : "Select crop")}
-          {state === "PARCELS" && (locale === "bg" ? "Вашите полета" : "Your fields")}
-          {state === "HISTORY" && (locale === "bg" ? "Исторически анализ" : "Frost history")}
-          {state === "COVERAGE" && (locale === "bg" ? "Покритие" : "Coverage")}
-          {state === "SIMULATION" && (locale === "bg" ? "Симулация" : "Simulation")}
+        {/* Row 1: context label */}
+        <div className="px-8 pt-3 pb-2 text-center">
+          <motion.p
+            key={state}
+            className="text-white text-sm font-medium tracking-wide"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {state === "DRAWING" && (locale === "bg" ? "Начертайте полето" : "Draw your field boundary")}
+            {state === "ASSIGN_CROP" && (locale === "bg" ? "Изберете култура" : "Select crop")}
+            {state === "PARCELS" && (locale === "bg" ? "Вашите полета" : "Your fields")}
+            {state === "HISTORY" && (locale === "bg" ? "Исторически анализ" : "Frost history")}
+            {state === "COVERAGE" && (locale === "bg" ? "Покритие" : "Coverage")}
+            {state === "SIMULATION" && (locale === "bg" ? "Симулация" : "Simulation")}
+          </motion.p>
         </div>
 
-        {/* Back button — shown on inner steps */}
-        {showBack && (
-          <>
-            <div className="w-px h-5 bg-white/15" />
-            <motion.button
-              onClick={handleBack}
-              className="px-4 py-3 text-white/60 text-xs hover:text-white hover:bg-white/10
-                         transition-all cursor-pointer whitespace-nowrap outline-none"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+        {/* Horizontal divider */}
+        <div className="h-px bg-white/10 mx-4" />
+
+        {/* Row 2: actions */}
+        <div className="grid grid-cols-3 items-center">
+          {/* Left — Aklima / Back */}
+          <div className="flex items-center">
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 px-5 py-2.5 text-white/60 text-xs
+                         hover:text-white hover:bg-white/8 transition-all whitespace-nowrap outline-none"
             >
-              ← {locale === "bg" ? "Назад" : "Back"}
-            </motion.button>
-          </>
-        )}
+              <ArrowLeft className="w-3 h-3" />
+              Aklima
+            </Link>
+            {showBack && (
+              <motion.button
+                onClick={handleBack}
+                className="flex items-center gap-1 px-3 py-2.5 text-white/50 text-xs
+                           hover:text-white hover:bg-white/8 transition-all cursor-pointer outline-none whitespace-nowrap"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <ArrowLeft className="w-3 h-3" />
+                {locale === "bg" ? "Назад" : "Back"}
+              </motion.button>
+            )}
+          </div>
 
-        {/* Divider */}
-        <div className="w-px h-5 bg-white/15" />
+          {/* Center — Layers */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => setWeatherOpen((o) => !o)}
+              className="flex items-center gap-1.5 px-4 py-2.5 text-white/70 text-xs
+                         hover:text-white hover:bg-white/8 rounded-full transition-all cursor-pointer outline-none"
+            >
+              {weatherMode === "none" && <Layers className="w-3.5 h-3.5" />}
+              {weatherMode === "clouds" && <Cloud className="w-3.5 h-3.5" />}
+              {weatherMode === "radar" && <CloudRain className="w-3.5 h-3.5" />}
+              {weatherMode === "temperature" && <Thermometer className="w-3.5 h-3.5" />}
+              <span>{weatherMode === "none" ? "Layers" : weatherMode.charAt(0).toUpperCase() + weatherMode.slice(1)}</span>
+              <ChevronDown className={`w-3 h-3 transition-transform ${weatherOpen ? "rotate-180" : ""}`} />
+            </button>
+          </div>
 
-        {/* Weather toggle */}
-        <button
-          onClick={() => setWeatherOpen((o) => !o)}
-          className="flex items-center gap-1.5 px-4 py-3 text-white/70 text-xs hover:text-white
-                     hover:bg-white/10 transition-all cursor-pointer whitespace-nowrap outline-none"
-        >
-          {weatherMode === "none" && <Layers className="w-3.5 h-3.5" />}
-          {weatherMode === "clouds" && <Cloud className="w-3.5 h-3.5" />}
-          {weatherMode === "radar" && <CloudRain className="w-3.5 h-3.5" />}
-          {weatherMode === "temperature" && <Thermometer className="w-3.5 h-3.5" />}
-          <span>{weatherMode === "none" ? "Layers" : weatherMode.charAt(0).toUpperCase() + weatherMode.slice(1)}</span>
-          <ChevronDown className={`w-3 h-3 transition-transform ${weatherOpen ? "rotate-180" : ""}`} />
-        </button>
-
-        {/* Divider */}
-        <div className="w-px h-5 bg-white/15" />
-
-        {/* Language toggle inline */}
-        <div className="px-3 py-3">
-          <LanguageToggle />
+          {/* Right — Language */}
+          <div className="flex justify-end">
+            <div className="px-5 py-2.5">
+              <LanguageToggle />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -210,7 +218,7 @@ export default function FarmerPage() {
       <AnimatePresence>
         {weatherOpen && (
           <motion.div
-            className="absolute top-16 left-1/2 -translate-x-1/2 z-40 w-44
+            className="absolute top-24 left-1/2 -translate-x-1/2 z-40 w-44
                        bg-black/40 backdrop-blur-md border border-white/15 rounded-2xl
                        overflow-hidden shadow-xl"
             initial={{ opacity: 0, y: -6, scale: 0.96 }}
