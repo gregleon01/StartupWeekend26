@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useEffect, useState, useRef } from "react";
+import { useMemo, useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Shield, TrendingUp, MapPin, AlertTriangle, Banknote, BarChart3, Radio, ArrowLeft, Activity, Layers } from "lucide-react";
+import { Shield, TrendingUp, MapPin, AlertTriangle, Banknote, BarChart3, Radio, ArrowLeft, Activity, Layers, Zap, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
 import { generateMockFields, computeFieldStats } from "@/lib/mockFields";
 import { computePortfolioRisk } from "@/lib/statistics";
@@ -96,6 +96,34 @@ export default function AdminPage() {
   const animTriggered = useCountUp(stats.payoutsTriggered, 1200, 650);
   const animPaid = useCountUp(stats.totalPaidOut, 1200, 800);
 
+  // Interactive: payout approval status
+  const [payoutStatuses, setPayoutStatuses] = useState<Record<number, "pending" | "approved" | "rejected">>({});
+  const handleApprove = useCallback((fieldId: number) => {
+    setPayoutStatuses((prev) => ({ ...prev, [fieldId]: "approved" }));
+  }, []);
+  const handleReject = useCallback((fieldId: number) => {
+    setPayoutStatuses((prev) => ({ ...prev, [fieldId]: "rejected" }));
+  }, []);
+
+  // Simulate regional frost event
+  const [simulating, setSimulating] = useState(false);
+  const [simProgress, setSimProgress] = useState(0);
+  const handleSimulateRegion = useCallback(() => {
+    if (simulating) return;
+    setSimulating(true);
+    setSimProgress(0);
+    let step = 0;
+    const total = 20;
+    const iv = setInterval(() => {
+      step++;
+      setSimProgress(step / total);
+      if (step >= total) {
+        clearInterval(iv);
+        setTimeout(() => { setSimulating(false); setSimProgress(0); }, 1500);
+      }
+    }, 150);
+  }, [simulating]);
+
   const lossRatio = stats.premiumsCollected > 0 ? stats.totalPaidOut / stats.premiumsCollected : 0;
   const lossColor = lossRatio < 0.6 ? "text-success-green" : lossRatio < 1.0 ? "text-accent-amber" : "text-danger-red";
   const lossLabel = lossRatio < 0.6 ? "Healthy" : lossRatio < 1.0 ? "Moderate" : "Unprofitable";
@@ -188,6 +216,20 @@ export default function AdminPage() {
             <span className="text-white/40 text-xs">Loss Ratio</span>
             <span className={`text-[9px] font-medium uppercase tracking-wider ${lossColor}`}>({lossLabel})</span>
           </div>
+          <div className="w-px h-4 bg-white/10" />
+          <button
+            onClick={handleSimulateRegion}
+            disabled={simulating}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap
+                       transition-all cursor-pointer ${
+                         simulating
+                           ? "bg-danger-red/20 text-danger-red"
+                           : "bg-accent-amber/15 text-accent-amber hover:bg-accent-amber/25"
+                       }`}
+          >
+            <Zap className="w-3 h-3" />
+            {simulating ? `Simulating... ${Math.round(simProgress * 100)}%` : "Simulate Regional Frost"}
+          </button>
         </div>
 
         {/* Charts grid */}
@@ -290,34 +332,64 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Column 4: Recent Activity Feed */}
+          {/* Column 4: Claim Queue */}
           <div className="border-r border-white/8 px-5 py-4 overflow-y-auto">
             <p className="text-white/50 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
               <Activity className="w-3 h-3" />
-              Recent Payouts
+              Claim Queue
             </p>
             <div className="space-y-2">
-              {recentActivity.map((item, i) => (
-                <motion.div
-                  key={i}
-                  className="flex items-center justify-between p-2.5 bg-white/4 border border-white/6 rounded-xl"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + i * 0.06, duration: 0.3 }}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">{contracts[item.crop]?.icon}</span>
-                    <div>
-                      <p className="text-white text-[10px] font-medium">Field #{item.fieldId}</p>
-                      <p className="text-white/30 text-[9px]">{contracts[item.crop]?.crop}</p>
+              {recentActivity.map((item, i) => {
+                const status = payoutStatuses[item.fieldId] ?? "pending";
+                return (
+                  <motion.div
+                    key={i}
+                    className={`p-2.5 rounded-xl border transition-colors ${
+                      status === "approved" ? "bg-success-green/8 border-success-green/20" :
+                      status === "rejected" ? "bg-danger-red/8 border-danger-red/20 opacity-50" :
+                      "bg-white/4 border-white/6"
+                    }`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: status === "rejected" ? 0.4 : 1, y: 0 }}
+                    transition={{ delay: 0.3 + i * 0.06, duration: 0.3 }}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">{contracts[item.crop]?.icon}</span>
+                        <div>
+                          <p className="text-white text-[10px] font-medium">Field #{item.fieldId}</p>
+                          <p className="text-white/30 text-[9px]">{contracts[item.crop]?.crop} · {item.time}</p>
+                        </div>
+                      </div>
+                      <p className="font-mono text-danger-red text-[11px] font-bold">€{item.amount}</p>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-mono text-danger-red text-[11px] font-bold">€{item.amount}</p>
-                    <p className="text-white/20 text-[8px]">{item.time}</p>
-                  </div>
-                </motion.div>
-              ))}
+                    {status === "pending" ? (
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => handleApprove(item.fieldId)}
+                          className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-success-green/15 text-success-green
+                                     text-[9px] font-medium rounded-lg hover:bg-success-green/25 transition-all cursor-pointer"
+                        >
+                          <CheckCircle className="w-3 h-3" /> Approve
+                        </button>
+                        <button
+                          onClick={() => handleReject(item.fieldId)}
+                          className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-white/6 text-white/40
+                                     text-[9px] font-medium rounded-lg hover:bg-danger-red/15 hover:text-danger-red transition-all cursor-pointer"
+                        >
+                          <XCircle className="w-3 h-3" /> Reject
+                        </button>
+                      </div>
+                    ) : (
+                      <p className={`text-[9px] font-medium uppercase tracking-wider ${
+                        status === "approved" ? "text-success-green" : "text-danger-red"
+                      }`}>
+                        {status === "approved" ? "✓ Approved — Processing" : "✗ Rejected"}
+                      </p>
+                    )}
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
 

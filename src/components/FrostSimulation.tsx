@@ -39,7 +39,7 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
   useEffect(() => {
     const data = simData.current;
     const threshold = contract.threshold;
-    const interval = 600; // ms per data point
+    const interval = 250; // ms per data point (~5s total for 19 points)
     let hoursBelow = 0;
     let triggered = false;
 
@@ -67,9 +67,9 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
 
         // Last point → show payout
         if (idx === data.length - 1) {
-          schedule(() => setShowPayout(true), 1200);
+          schedule(() => setShowPayout(true), 600);
         }
-      }, 1500 + idx * interval); // Start after 1.5s
+      }, 800 + idx * interval); // Start after 0.8s
     });
   }, [contract, schedule, breached]);
 
