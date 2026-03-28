@@ -2,17 +2,14 @@
 
 import { useMemo, useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Shield, TrendingUp, MapPin, AlertTriangle, Banknote, BarChart3, Radio, ArrowLeft } from "lucide-react";
+import { Shield, TrendingUp, MapPin, AlertTriangle, Banknote, BarChart3, Radio, ArrowLeft, Activity, Layers } from "lucide-react";
 import Link from "next/link";
 import { generateMockFields, computeFieldStats } from "@/lib/mockFields";
 import { computePortfolioRisk } from "@/lib/statistics";
 import { contracts } from "@/lib/contracts";
 import { usePortfolioWeather } from "@/hooks/usePortfolioWeather";
-import type { CropKey } from "@/types";
+import type { CropKey, MockField } from "@/types";
 import InsuredFieldsMap from "@/components/InsuredFieldsMap";
-import CropPayoutChart from "@/components/charts/CropPayoutChart";
-import LossRatioGauge from "@/components/charts/LossRatioGauge";
-import TriggerSparkline from "@/components/charts/TriggerSparkline";
 
 function useCountUp(target: number, duration: number = 1200, delay: number = 0) {
   const [value, setValue] = useState(0);
@@ -28,15 +25,53 @@ function useCountUp(target: number, duration: number = 1200, delay: number = 0) 
       };
       frame.current = requestAnimationFrame(tick);
     }, delay);
-    return () => {
-      clearTimeout(timeout);
-      cancelAnimationFrame(frame.current);
-    };
+    return () => { clearTimeout(timeout); cancelAnimationFrame(frame.current); };
   }, [target, duration, delay]);
   return value;
 }
 
-const ACTIVITY_TIMES = ["2h ago", "2h ago", "3h ago", "3h ago", "4h ago", "4h ago"];
+/* ------------------------------------------------------------------ */
+/*  Crop colors + helpers                                              */
+/* ------------------------------------------------------------------ */
+
+const CROP_COLORS: Record<CropKey, string> = {
+  cherries: "#EF5350", grapes: "#AB47BC", wheat: "#F5A623", sunflower: "#66BB6A",
+};
+
+const MONTH_WEIGHTS: Record<CropKey, number[]> = {
+  cherries:  [0, 0, 0, 0.2, 0.6, 0.2, 0, 0, 0, 0, 0, 0],
+  grapes:    [0, 0, 0, 0.1, 0.5, 0.4, 0, 0, 0, 0, 0, 0],
+  wheat:     [0, 0, 0.3, 0.5, 0.2, 0, 0, 0, 0, 0, 0, 0],
+  sunflower: [0, 0, 0, 0, 0.3, 0.5, 0.2, 0, 0, 0, 0, 0],
+};
+const MONTHS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+
+function computeMonthlyTriggers(fields: MockField[]) {
+  const triggered = fields.filter((f) => f.payoutTriggered);
+  const counts = new Array(12).fill(0);
+  for (const f of triggered) {
+    const w = MONTH_WEIGHTS[f.crop];
+    for (let m = 0; m < 12; m++) counts[m] += w[m] * f.hectares;
+  }
+  return counts;
+}
+
+function computeCropBreakdown(fields: MockField[]) {
+  const triggered = fields.filter((f) => f.payoutTriggered);
+  return (["cherries", "grapes", "wheat", "sunflower"] as CropKey[]).map((crop) => {
+    const cropFields = triggered.filter((f) => f.crop === crop);
+    const total = cropFields.reduce((sum, f) => sum + f.payoutAmount * f.hectares, 0);
+    const covered = fields.filter((f) => f.crop === crop && f.covered);
+    const ha = covered.reduce((sum, f) => sum + f.hectares, 0);
+    return { crop, total, count: cropFields.length, ha: Math.round(ha), fields: covered.length };
+  });
+}
+
+const ACTIVITY_TIMES = ["2h ago", "2h ago", "3h ago", "3h ago", "4h ago", "4h ago", "5h ago", "5h ago"];
+
+/* ------------------------------------------------------------------ */
+/*  Page                                                               */
+/* ------------------------------------------------------------------ */
 
 export default function AdminPage() {
   const { triggerRates, loading: weatherLoading, isLiveData } = usePortfolioWeather();
@@ -44,18 +79,14 @@ export default function AdminPage() {
   const fields = useMemo(() => generateMockFields(triggerRates), [triggerRates]);
   const stats = useMemo(() => computeFieldStats(fields), [fields]);
   const portfolio = useMemo(() => computePortfolioRisk(fields, triggerRates), [fields, triggerRates]);
+  const cropData = useMemo(() => computeCropBreakdown(fields), [fields]);
+  const monthCounts = useMemo(() => computeMonthlyTriggers(fields), [fields]);
 
   const recentActivity = useMemo(
-    () =>
-      fields
-        .filter((f) => f.payoutTriggered)
-        .slice(0, 6)
-        .map((f, i) => ({
-          fieldId: f.id,
-          crop: f.crop,
-          amount: f.payoutAmount,
-          time: ACTIVITY_TIMES[i] ?? "5h ago",
-        })),
+    () => fields.filter((f) => f.payoutTriggered).slice(0, 8).map((f, i) => ({
+      fieldId: f.id, crop: f.crop, amount: f.payoutAmount,
+      time: ACTIVITY_TIMES[i] ?? "5h ago",
+    })),
     [fields],
   );
 
@@ -65,12 +96,21 @@ export default function AdminPage() {
   const animTriggered = useCountUp(stats.payoutsTriggered, 1200, 650);
   const animPaid = useCountUp(stats.totalPaidOut, 1200, 800);
 
+  const lossRatio = stats.premiumsCollected > 0 ? stats.totalPaidOut / stats.premiumsCollected : 0;
+  const lossColor = lossRatio < 0.6 ? "text-success-green" : lossRatio < 1.0 ? "text-accent-amber" : "text-danger-red";
+  const lossLabel = lossRatio < 0.6 ? "Healthy" : lossRatio < 1.0 ? "Moderate" : "Unprofitable";
+
+  const maxCropTotal = Math.max(...cropData.map((d) => d.total), 1);
+  const maxMonth = Math.max(...monthCounts, 1);
+
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-bg-primary">
-      {/* Map — full bleed */}
-      <InsuredFieldsMap fields={fields} />
+      {/* Map — full bleed, top 55% of screen */}
+      <div className="absolute inset-0 bottom-[45vh]">
+        <InsuredFieldsMap fields={fields} />
+      </div>
 
-      {/* Aklima home — top left pill */}
+      {/* Aklima home — top left */}
       <Link
         href="/"
         className="absolute top-4 left-4 z-40 flex items-center gap-1.5 px-4 py-2
@@ -86,9 +126,9 @@ export default function AdminPage() {
         <div className="flex items-center gap-3 px-5 py-2 bg-white/8 backdrop-blur-xl border border-white/12 rounded-full shadow-xl">
           <Shield className="w-4 h-4 text-accent-amber" />
           <span className="text-white text-sm font-medium">Insurer Dashboard</span>
-          <span className="text-white/30">·</span>
+          <span className="text-white/20">·</span>
           <span className="text-white/60 text-xs">Kyustendil Region</span>
-          <span className="text-white/30">·</span>
+          <span className="text-white/20">·</span>
           {weatherLoading ? (
             <span className="text-white/40 text-xs animate-pulse">Loading…</span>
           ) : (
@@ -100,103 +140,167 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Stats row — floating pill, offset left to avoid sidebar */}
-      <div className="absolute top-16 left-4 z-40">
-        <div className="flex items-center gap-4 px-5 py-2.5 bg-white/8 backdrop-blur-xl border border-white/12 rounded-full shadow-xl">
-          <StatPill icon={<MapPin className="w-3.5 h-3.5" />} value={animFields} label="Fields" />
-          <div className="w-px h-4 bg-white/12" />
-          <StatPill icon={<TrendingUp className="w-3.5 h-3.5" />} value={animHa} label="ha" />
-          <div className="w-px h-4 bg-white/12" />
-          <StatPill icon={<Banknote className="w-3.5 h-3.5" />} value={animPremiums} label="Premiums" prefix="€" amber />
-          <div className="w-px h-4 bg-white/12" />
-          <StatPill icon={<AlertTriangle className="w-3.5 h-3.5" />} value={animTriggered} label="Triggered" danger />
-          <div className="w-px h-4 bg-white/12" />
-          <StatPill icon={<Banknote className="w-3.5 h-3.5" />} value={animPaid} label="Paid Out" prefix="€" danger />
-        </div>
-      </div>
-
-      {/* Right sidebar — floating glass panel */}
+      {/* Bottom dashboard panel */}
       <motion.div
-        className="absolute top-4 right-4 bottom-4 w-[320px] z-30
-                   bg-white/8 backdrop-blur-xl border border-white/12 rounded-2xl
-                   overflow-hidden shadow-xl flex flex-col"
-        initial={{ x: 340, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ type: "spring", damping: 25, delay: 0.2 }}
+        className="absolute left-0 right-0 bottom-0 h-[48vh] z-30
+                   bg-white/8 backdrop-blur-2xl border-t border-white/12 shadow-2xl"
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        transition={{ type: "tween", duration: 0.4, ease: "easeOut", delay: 0.15 }}
       >
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
-
-          {/* Loss Ratio Gauge */}
-          <LossRatioGauge
-            premiums={stats.premiumsCollected}
-            payouts={stats.totalPaidOut}
-          />
-
-          {/* Payout by Crop */}
-          <CropPayoutChart fields={fields} />
-
-          {/* Monthly Trigger Distribution */}
-          <TriggerSparkline fields={fields} />
-
-          {/* Portfolio Risk Metrics */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 mb-3">
-              <BarChart3 className="w-3.5 h-3.5 text-white/50" />
-              <p className="text-white/50 text-xs uppercase tracking-widest">
-                Portfolio Risk
-              </p>
-            </div>
-            <RiskMetric label="Total Exposure" value={`€${portfolio.totalExposure.toLocaleString()}`} />
-            <RiskMetric label="Expected Annual" value={`€${portfolio.expectedAnnualPayout.toLocaleString()}`} />
-            <RiskMetric label="VaR 95%" value={`€${portfolio.valueAtRisk95.toLocaleString()}`} highlight />
-            <RiskMetric label="Zones" value={String(portfolio.correlationZones)} />
-            <RiskMetric label="Diversification" value={`${Math.round(portfolio.diversificationBenefit * 100)}%`} />
+        {/* Stats row — top edge of panel */}
+        <div className="flex items-center gap-5 px-8 py-3 border-b border-white/8 overflow-x-auto">
+          <StatPill icon={<MapPin className="w-3.5 h-3.5" />} value={animFields} label="Fields" />
+          <div className="w-px h-4 bg-white/10" />
+          <StatPill icon={<TrendingUp className="w-3.5 h-3.5" />} value={animHa} label="ha" />
+          <div className="w-px h-4 bg-white/10" />
+          <StatPill icon={<Banknote className="w-3.5 h-3.5" />} value={animPremiums} label="Premiums" prefix="€" amber />
+          <div className="w-px h-4 bg-white/10" />
+          <StatPill icon={<AlertTriangle className="w-3.5 h-3.5" />} value={animTriggered} label="Triggered" danger />
+          <div className="w-px h-4 bg-white/10" />
+          <StatPill icon={<Banknote className="w-3.5 h-3.5" />} value={animPaid} label="Paid Out" prefix="€" danger />
+          <div className="w-px h-4 bg-white/10" />
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <Activity className="w-3.5 h-3.5 text-white/40" />
+            <span className={`font-mono text-sm font-bold ${lossColor}`}>{Math.round(lossRatio * 100)}%</span>
+            <span className="text-white/40 text-xs">Loss Ratio</span>
+            <span className={`text-[9px] font-medium uppercase tracking-wider ${lossColor}`}>({lossLabel})</span>
           </div>
+        </div>
 
-          {/* Divider */}
-          <div className="h-px bg-white/8" />
+        {/* Charts grid */}
+        <div className="grid grid-cols-4 gap-0 h-[calc(100%-52px)]">
 
-          {/* Recent Payouts */}
-          <div className="space-y-2">
-            <p className="text-white/50 text-xs uppercase tracking-widest">
-              Recent Payouts
+          {/* Column 1: Crop Breakdown */}
+          <div className="border-r border-white/8 px-5 py-4 overflow-y-auto">
+            <p className="text-white/50 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+              <Layers className="w-3 h-3" />
+              Crop Exposure
             </p>
-            {recentActivity.map((item, i) => (
-              <motion.div
-                key={i}
-                className="flex items-center justify-between p-2.5 bg-white/6 border border-white/8 rounded-xl"
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + i * 0.08, duration: 0.4 }}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-base">{contracts[item.crop]?.icon}</span>
-                  <div>
-                    <p className="text-white text-[11px] font-medium">Field #{item.fieldId}</p>
-                    <p className="text-white/40 text-[10px]">{contracts[item.crop]?.crop}</p>
-                  </div>
+            {cropData.map((d, i) => (
+              <div key={d.crop} className="mb-3">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-white/70 flex items-center gap-1.5">
+                    <span>{contracts[d.crop]?.icon}</span>
+                    <span>{contracts[d.crop]?.crop}</span>
+                  </span>
+                  <span className="font-mono text-white font-bold text-[11px]">
+                    €{Math.round(d.total).toLocaleString()}
+                  </span>
                 </div>
-                <div className="text-right">
-                  <p className="font-mono text-danger-red text-xs font-bold">€{item.amount}</p>
-                  <p className="text-white/30 text-[9px]">{item.time}</p>
+                <div className="h-1.5 bg-white/6 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ backgroundColor: CROP_COLORS[d.crop] }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(d.total / maxCropTotal) * 100}%` }}
+                    transition={{ delay: 0.3 + i * 0.1, duration: 0.8, ease: "easeOut" }}
+                  />
                 </div>
-              </motion.div>
+                <div className="flex justify-between text-[9px] text-white/30 mt-0.5">
+                  <span>{d.fields} fields · {d.ha} ha</span>
+                  <span>{d.count} triggered</span>
+                </div>
+              </div>
             ))}
           </div>
 
-          {/* Legend */}
-          <div className="space-y-2">
-            <p className="text-white/50 text-xs uppercase tracking-widest mb-2">Legend</p>
-            <LegendItem color="#66BB6A" label="Covered, no event" />
-            <LegendItem color="#F5A623" label="Covered, elevated risk" />
-            <LegendItem color="#EF5350" label="Payout triggered" />
-            <LegendItem color="#555555" label="Not yet covered" />
+          {/* Column 2: Monthly Trigger Heatmap */}
+          <div className="border-r border-white/8 px-5 py-4">
+            <p className="text-white/50 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+              <BarChart3 className="w-3 h-3" />
+              Monthly Triggers
+            </p>
+            <div className="flex items-end gap-1 h-[calc(100%-60px)]">
+              {monthCounts.map((count, i) => {
+                const pct = (count / maxMonth) * 100;
+                const active = count > 0;
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-full relative" style={{ height: "100%" }}>
+                      <div className="absolute inset-x-0 bottom-0 bg-white/4 rounded-sm" style={{ height: "100%" }} />
+                      <motion.div
+                        className="absolute inset-x-0 bottom-0 rounded-sm"
+                        style={{ backgroundColor: active ? "#F5A623" : "transparent" }}
+                        initial={{ height: 0 }}
+                        animate={{ height: `${pct}%` }}
+                        transition={{ delay: 0.2 + i * 0.04, duration: 0.6, ease: "easeOut" }}
+                      />
+                    </div>
+                    <span className={`text-[8px] font-mono ${active ? "text-white/60" : "text-white/20"}`}>
+                      {MONTHS[i]}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Column 3: Portfolio Risk */}
+          <div className="border-r border-white/8 px-5 py-4">
+            <p className="text-white/50 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+              <Shield className="w-3 h-3" />
+              Portfolio Risk
+            </p>
+            <div className="space-y-3">
+              <RiskRow label="Total Exposure" value={`€${portfolio.totalExposure.toLocaleString()}`} />
+              <RiskRow label="Expected Annual" value={`€${portfolio.expectedAnnualPayout.toLocaleString()}`} />
+              <RiskRow label="VaR 95%" value={`€${portfolio.valueAtRisk95.toLocaleString()}`} highlight />
+              <RiskRow label="Max Possible" value={`€${portfolio.maxPossiblePayout.toLocaleString()}`} />
+              <div className="h-px bg-white/8" />
+              <RiskRow label="Correlation Zones" value={String(portfolio.correlationZones)} />
+              <RiskRow label="Diversification" value={`${Math.round(portfolio.diversificationBenefit * 100)}%`} />
+            </div>
+
+            {/* Legend */}
+            <div className="mt-4 space-y-1.5">
+              <p className="text-white/30 text-[9px] uppercase tracking-widest mb-1">Map Legend</p>
+              <LegendDot color="#66BB6A" label="Covered" />
+              <LegendDot color="#F5A623" label="High risk" />
+              <LegendDot color="#EF5350" label="Triggered" />
+              <LegendDot color="#555555" label="Uninsured" />
+            </div>
+          </div>
+
+          {/* Column 4: Recent Activity Feed */}
+          <div className="px-5 py-4 overflow-y-auto">
+            <p className="text-white/50 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+              <Activity className="w-3 h-3" />
+              Recent Payouts
+            </p>
+            <div className="space-y-2">
+              {recentActivity.map((item, i) => (
+                <motion.div
+                  key={i}
+                  className="flex items-center justify-between p-2.5 bg-white/4 border border-white/6 rounded-xl"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + i * 0.06, duration: 0.3 }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{contracts[item.crop]?.icon}</span>
+                    <div>
+                      <p className="text-white text-[10px] font-medium">Field #{item.fieldId}</p>
+                      <p className="text-white/30 text-[9px]">{contracts[item.crop]?.crop}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono text-danger-red text-[11px] font-bold">€{item.amount}</p>
+                    <p className="text-white/20 text-[8px]">{item.time}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </motion.div>
     </main>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Sub-components                                                     */
+/* ------------------------------------------------------------------ */
 
 function StatPill({
   icon, value, label, prefix = "", amber = false, danger = false,
@@ -213,20 +317,20 @@ function StatPill({
   );
 }
 
-function RiskMetric({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+function RiskRow({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="flex items-center justify-between py-1.5">
-      <span className="text-white/50 text-xs">{label}</span>
-      <span className={`font-mono text-xs font-bold ${highlight ? "text-accent-amber" : "text-white"}`}>{value}</span>
+    <div className="flex items-center justify-between">
+      <span className="text-white/40 text-[11px]">{label}</span>
+      <span className={`font-mono text-[11px] font-bold ${highlight ? "text-accent-amber" : "text-white"}`}>{value}</span>
     </div>
   );
 }
 
-function LegendItem({ color, label }: { color: string; label: string }) {
+function LegendDot({ color, label }: { color: string; label: string }) {
   return (
-    <div className="flex items-center gap-2">
-      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-      <span className="text-white/60 text-xs">{label}</span>
+    <div className="flex items-center gap-1.5">
+      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+      <span className="text-white/40 text-[9px]">{label}</span>
     </div>
   );
 }
