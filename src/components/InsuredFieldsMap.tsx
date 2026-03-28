@@ -9,11 +9,30 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
+/** Distinct colors for station zone grouping — shows correlated risk */
+const ZONE_COLORS: Record<string, string> = {
+  "bg-kyustendil": "#4FC3F7",
+  "bg-sofia": "#AB47BC",
+  "bg-plovdiv": "#66BB6A",
+  "bg-blagoevgrad": "#F5A623",
+  "bg-dupnitsa": "#EF5350",
+  "bg-pernik": "#26C6DA",
+  "bg-sandanski": "#FF7043",
+  "bg-montana": "#8D6E63",
+  "bg-pazardzhik": "#FFEE58",
+  "bg-lovech": "#78909C",
+};
+
+type ColorMode = "risk" | "zone";
+
 interface InsuredFieldsMapProps {
   fields: MockField[];
 }
 
-function fieldColor(field: MockField): string {
+function fieldColor(field: MockField, mode: ColorMode): string {
+  if (mode === "zone") {
+    return ZONE_COLORS[field.stationZone] ?? "#888888";
+  }
   if (field.payoutTriggered) return "#EF5350";
   if (!field.covered) return "#555555";
   if (field.riskScore > 70) return "#F5A623";
@@ -26,6 +45,7 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
     x: number;
     y: number;
   } | null>(null);
+  const [colorMode, setColorMode] = useState<ColorMode>("risk");
 
   const geojson = useMemo(() => {
     return {
@@ -38,17 +58,18 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
         },
         properties: {
           id: f.id,
-          color: fieldColor(f),
+          color: fieldColor(f, colorMode),
           crop: f.crop,
           hectares: f.hectares,
           covered: f.covered,
           riskScore: f.riskScore,
           payoutTriggered: f.payoutTriggered,
           payoutAmount: f.payoutAmount,
+          stationZone: f.stationZone,
         },
       })),
     };
-  }, [fields]);
+  }, [fields, colorMode]);
 
   const handleMouseMove = useCallback(
     (e: MapLayerMouseEvent) => {
@@ -124,6 +145,30 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
         </Source>
       </Map>
 
+      {/* Color mode toggle */}
+      <div className="absolute top-4 right-4 z-50 flex gap-1 bg-bg-tertiary/90 backdrop-blur rounded-lg p-1 text-xs pointer-events-auto">
+        <button
+          onClick={() => setColorMode("risk")}
+          className={`px-3 py-1.5 rounded transition-colors ${
+            colorMode === "risk"
+              ? "bg-bg-primary text-text-primary"
+              : "text-text-tertiary hover:text-text-secondary"
+          }`}
+        >
+          Risk
+        </button>
+        <button
+          onClick={() => setColorMode("zone")}
+          className={`px-3 py-1.5 rounded transition-colors ${
+            colorMode === "zone"
+              ? "bg-bg-primary text-text-primary"
+              : "text-text-tertiary hover:text-text-secondary"
+          }`}
+        >
+          Station Zones
+        </button>
+      </div>
+
       {/* Tooltip */}
       {tooltip && (
         <div
@@ -146,6 +191,11 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
           {tooltip.field.payoutTriggered && (
             <p className="text-danger-red font-mono font-bold mt-0.5">
               Payout: &euro;{tooltip.field.payoutAmount}
+            </p>
+          )}
+          {colorMode === "zone" && (
+            <p className="text-text-secondary mt-0.5">
+              Zone: {tooltip.field.stationZone.replace("bg-", "").replace(/-/g, " ")}
             </p>
           )}
           {!tooltip.field.covered && (
