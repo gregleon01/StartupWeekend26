@@ -90,10 +90,10 @@ export default function Home() {
       {showBack && (
         <motion.button
           onClick={handleBack}
-          className={`absolute ${state === "HISTORY" ? "top-14" : "top-4"} left-4 z-30 flex items-center gap-1.5 px-3 py-1.5
-                     bg-bg-secondary/80 backdrop-blur-md border border-border-subtle
+          className={`absolute ${state === "HISTORY" ? "top-14" : "top-4"} left-4 z-40 flex items-center gap-1.5 px-3 py-1.5
+                     bg-bg-secondary border border-border-subtle
                      rounded-lg text-text-secondary text-xs hover:text-text-primary
-                     hover:bg-bg-secondary transition-all cursor-pointer`}
+                     hover:brightness-110 transition-all cursor-pointer`}
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -10 }}
