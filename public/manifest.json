@@ -1,0 +1,16 @@
+{
+  "name": "Niva — Parametric Crop Insurance",
+  "short_name": "Niva",
+  "description": "Automatic weather insurance for small farms. No paperwork. No adjusters.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0F1C",
+  "theme_color": "#F5A623",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
