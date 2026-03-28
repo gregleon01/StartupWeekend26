@@ -43,20 +43,25 @@ export default function FieldInfoBar({ pin, enrichment }: FieldInfoBarProps) {
 
   return (
     <motion.div
-      className="absolute bottom-0 left-0 right-0 z-20"
-      initial={{ y: 60, opacity: 0 }}
+      className="absolute top-4 left-1/2 -translate-x-1/2 z-20"
+      initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.3, type: "spring", damping: 22, stiffness: 180 }}
     >
-      <div className="flex items-center justify-around px-8 py-4 bg-bg-secondary/70 backdrop-blur-xl border-t border-border-subtle">
-        {stats.map((s) => (
-          <div key={s.label} className="flex flex-col items-center gap-0.5">
-            <span className="text-[9px] text-text-tertiary uppercase tracking-widest">
-              {s.label}
-            </span>
-            <span className={`text-sm font-medium font-mono whitespace-nowrap ${s.valueClass ?? "text-text-primary"}`}>
-              {s.value}
-            </span>
+      <div className="flex items-center gap-6 px-5 py-3 bg-bg-secondary/70 backdrop-blur-xl border border-border-subtle rounded-2xl shadow-lg">
+        {stats.map((s, i) => (
+          <div key={s.label} className="flex items-center gap-6">
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-[9px] text-text-tertiary uppercase tracking-widest whitespace-nowrap">
+                {s.label}
+              </span>
+              <span className={`text-sm font-medium font-mono whitespace-nowrap ${s.valueClass ?? "text-text-primary"}`}>
+                {s.value}
+              </span>
+            </div>
+            {i < stats.length - 1 && (
+              <div className="w-px h-6 bg-border-subtle" />
+            )}
           </div>
         ))}
       </div>
