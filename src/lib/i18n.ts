@@ -15,7 +15,7 @@ export type Locale = "bg" | "en";
 export const translations = {
   bg: {
     // Map screen
-    "map.title": "Niva",
+    "map.title": "Aklima",
     "map.subtitle": "Параметрично земеделско застраховане",
     "map.prompt": "Натиснете върху полето си",
 
@@ -68,7 +68,7 @@ export const translations = {
     "lang": "EN",
   },
   en: {
-    "map.title": "Niva",
+    "map.title": "Aklima",
     "map.subtitle": "Parametric Crop Insurance",
     "map.prompt": "Tap on your field",
 

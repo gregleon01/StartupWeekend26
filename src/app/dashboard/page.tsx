@@ -79,7 +79,7 @@ export default function DashboardPage() {
         <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Shield className="w-5 h-5 text-accent-amber" />
-            <span className="text-text-primary font-medium text-sm">Niva</span>
+            <span className="text-text-primary font-medium text-sm">Aklima</span>
             <span className="text-text-tertiary text-xs">
               Insurer Dashboard
             </span>

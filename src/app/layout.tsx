@@ -3,7 +3,7 @@ import LocaleProvider from "@/components/LocaleProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Niva · Parametric Weather Insurance",
+  title: "Aklima · Parametric Weather Insurance",
   description:
     "Automatic weather insurance for small farms. No paperwork. No adjusters. Payout in 48 hours.",
   icons: { icon: "/favicon.svg" },

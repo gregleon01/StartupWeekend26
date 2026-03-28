@@ -138,7 +138,7 @@ export default function FarmerPage() {
           className="px-3 py-1.5 bg-bg-secondary/80 backdrop-blur-md border border-border-subtle
                      rounded-lg text-text-secondary text-xs hover:text-text-primary transition-all"
         >
-          ← Niva
+          ← Aklima
         </Link>
         {showBack && (
           <motion.button
