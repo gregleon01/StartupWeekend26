@@ -32,16 +32,7 @@ function useCountUp(target: number, duration: number = 1200, delay: number = 0) 
   return value;
 }
 
-const RECENT_ACTIVITY = [
-  { fieldId: 147, crop: "cherries" as CropKey, amount: 340, time: "2h ago" },
-  { fieldId: 23, crop: "grapes" as CropKey, amount: 280, time: "2h ago" },
-  { fieldId: 89, crop: "cherries" as CropKey, amount: 340, time: "2h ago" },
-  { fieldId: 195, crop: "sunflower" as CropKey, amount: 220, time: "3h ago" },
-  { fieldId: 12, crop: "wheat" as CropKey, amount: 180, time: "3h ago" },
-  { fieldId: 156, crop: "cherries" as CropKey, amount: 340, time: "3h ago" },
-  { fieldId: 67, crop: "grapes" as CropKey, amount: 280, time: "4h ago" },
-  { fieldId: 201, crop: "sunflower" as CropKey, amount: 220, time: "4h ago" },
-];
+const ACTIVITY_TIMES = ["2h ago", "2h ago", "3h ago", "3h ago", "4h ago", "4h ago", "5h ago", "5h ago"];
 
 export default function DashboardPage() {
   const { triggerRates, loading: weatherLoading, isLiveData } = usePortfolioWeather();
@@ -52,7 +43,25 @@ export default function DashboardPage() {
     [triggerRates],
   );
   const stats = useMemo(() => computeFieldStats(fields), [fields]);
-  const portfolio = useMemo(() => computePortfolioRisk(fields), [fields]);
+  const portfolio = useMemo(
+    () => computePortfolioRisk(fields, triggerRates),
+    [fields, triggerRates],
+  );
+
+  // Derive recent activity from actual triggered fields — not hardcoded
+  const recentActivity = useMemo(
+    () =>
+      fields
+        .filter((f) => f.payoutTriggered)
+        .slice(0, 8)
+        .map((f, i) => ({
+          fieldId: f.id,
+          crop: f.crop,
+          amount: f.payoutAmount,
+          time: ACTIVITY_TIMES[i] ?? "5h ago",
+        })),
+    [fields],
+  );
 
   const animFields = useCountUp(stats.fieldsInsured, 1200, 200);
   const animHa = useCountUp(stats.hectaresCovered, 1200, 350);
@@ -135,7 +144,7 @@ export default function DashboardPage() {
           </p>
 
           <div className="space-y-2">
-            {RECENT_ACTIVITY.map((item, i) => (
+            {recentActivity.map((item, i) => (
               <motion.div
                 key={i}
                 className="flex items-center justify-between p-3 bg-bg-tertiary/50 rounded-lg"

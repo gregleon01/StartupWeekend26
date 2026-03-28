@@ -314,9 +314,9 @@ pnpm build && pnpm start
 
 | Name | Role |
 |------|------|
-| Gregory Leon Faurie | |
-| Martin Georgiev | |
-| Viktoria Eneva | |
-| Slavi Sotirov | |
+| Gregory Leon Faurie | Product & Strategy |
+| Martin Georgiev | Engineering |
+| Viktoria Eneva | Design & Research |
+| Slavi Sotirov | Engineering |
 
 Built at **HackAUBG 8.0 · The Hub Sofia**

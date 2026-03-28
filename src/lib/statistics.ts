@@ -101,7 +101,22 @@ export function analyzeTrend(events: FrostEvent[]): TrendAnalysis {
  *   - Diversification benefit: reduction from crop mix
  *   - Correlation zones: number of independent trigger zones
  */
-export function computePortfolioRisk(fields: MockField[]): PortfolioRisk {
+/**
+ * Computes portfolio-level risk metrics for the insurer dashboard.
+ *
+ * When real historical trigger rates are provided (derived from running the
+ * FSM against Open-Meteo data), expected payout and VaR are computed from
+ * empirical frequencies rather than static assumptions.
+ *
+ * Expected annual payout: weighted sum of (crop exposure × crop trigger rate)
+ * VaR 95%: worst-case scenario where spatial correlation causes the highest-risk
+ *   crop's historical frequency to drive portfolio-wide losses — models a
+ *   regional frost event hitting all fields simultaneously.
+ */
+export function computePortfolioRisk(
+  fields: MockField[],
+  triggerRates?: Record<CropKey, number>,
+): PortfolioRisk {
   const covered = fields.filter((f) => f.covered);
   const payoutAmounts: Record<CropKey, number> = {
     cherries: contracts.cherries.payoutPerHectare,
@@ -116,18 +131,33 @@ export function computePortfolioRisk(fields: MockField[]): PortfolioRisk {
     0,
   );
 
-  // Max possible payout = total exposure (everything triggers)
+  // Max possible payout = total exposure (everything triggers simultaneously)
   const maxPossiblePayout = totalExposure;
 
-  // Historical trigger rate: ~30% of covered fields in a bad year
-  // Expected annual payout: avg over distribution
-  const triggerRate = 0.15; // 15% average annual trigger rate
-  const expectedAnnualPayout = totalExposure * triggerRate;
+  let expectedAnnualPayout: number;
+  let valueAtRisk95: number;
 
-  // VaR 95%: 95th percentile — approximately 45% of fields trigger
-  // (based on spatial correlation: when frost hits, it hits a region)
-  const var95TriggerRate = 0.45;
-  const valueAtRisk95 = totalExposure * var95TriggerRate;
+  if (triggerRates) {
+    // Empirical: per-crop exposure weighted by real historical trigger rate
+    const cropExposure: Partial<Record<CropKey, number>> = {};
+    for (const f of covered) {
+      cropExposure[f.crop] = (cropExposure[f.crop] ?? 0) + f.hectares * payoutAmounts[f.crop];
+    }
+    expectedAnnualPayout = (Object.keys(cropExposure) as CropKey[]).reduce(
+      (sum, crop) => sum + (cropExposure[crop] ?? 0) * triggerRates[crop],
+      0,
+    );
+
+    // VaR 95%: spatial correlation means a regional frost event triggers
+    // fields across all crops. Use highest single-crop rate as the worst-case
+    // portfolio-wide trigger fraction (historically observed upper bound).
+    const maxRate = Math.max(...(Object.values(triggerRates) as number[]));
+    valueAtRisk95 = totalExposure * Math.min(maxRate, 0.9);
+  } else {
+    // Fallback static assumptions
+    expectedAnnualPayout = totalExposure * 0.15;
+    valueAtRisk95 = totalExposure * 0.45;
+  }
 
   // Count unique station zones
   const zones = new Set(covered.map((f) => f.stationZone));
