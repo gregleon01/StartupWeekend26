@@ -3,112 +3,189 @@
 import { useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
-import type { AppState, CropKey, FieldPin, ParametricContract, FieldEnrichment } from "@/types";
+import Link from "next/link";
+import type { CropKey, FarmerParcel, ParametricContract, FieldEnrichment } from "@/types";
 import { contracts } from "@/lib/contracts";
 import { useWeatherData } from "@/hooks/useWeatherData";
 import { enrichField } from "@/lib/geoEnrich";
+import { computeHectares, computeCentroid } from "@/lib/geo";
 
 import { useLocale } from "@/lib/i18n";
 import LanguageToggle from "@/components/LanguageToggle";
-import MapView from "@/components/MapView";
-import CropSelector from "@/components/CropSelector";
+import DrawableMap from "@/components/DrawableMap";
+import ParcelCropSheet from "@/components/ParcelCropSheet";
+import ParcelSidebar from "@/components/ParcelSidebar";
 import FieldInfoBar from "@/components/FieldInfoBar";
 import HistoricalTimeline from "@/components/HistoricalTimeline";
 import CoverageCard from "@/components/CoverageCard";
 import FrostSimulation from "@/components/FrostSimulation";
 
+type FarmerState =
+  | "DRAWING"        // Drawing polygon on map
+  | "ASSIGN_CROP"    // Polygon drawn, pick crop
+  | "PARCELS"        // Viewing all parcels, can add more
+  | "HISTORY"        // Viewing frost history for selected parcel
+  | "COVERAGE"       // Coverage offer
+  | "SIMULATION";    // Frost simulation
+
 export default function FarmerPage() {
-  const { t } = useLocale();
-  const [state, setState] = useState<AppState>("MAP_SELECT");
-  const [pin, setPin] = useState<FieldPin | null>(null);
+  const { locale } = useLocale();
+  const [state, setState] = useState<FarmerState>("DRAWING");
+  const [parcels, setParcels] = useState<FarmerParcel[]>([]);
+  const [pendingCoords, setPendingCoords] = useState<[number, number][] | null>(null);
+  const [pendingHectares, setPendingHectares] = useState(0);
+  const [activeParcel, setActiveParcel] = useState<FarmerParcel | null>(null);
   const [contract, setContract] = useState<ParametricContract | null>(null);
   const [enrichment, setEnrichment] = useState<FieldEnrichment | null>(null);
 
   const weather = useWeatherData();
 
-  const handlePinDrop = useCallback(async (p: FieldPin) => {
-    setPin(p);
-    enrichField(p).then(setEnrichment);
-    setTimeout(() => setState("CROP_SELECT"), 800);
+  // Polygon completed — show crop selector
+  const handlePolygonComplete = useCallback((coords: [number, number][]) => {
+    const ha = computeHectares(coords);
+    setPendingCoords(coords);
+    setPendingHectares(ha);
+    setState("ASSIGN_CROP");
   }, []);
 
-  const handleCropSelect = useCallback(
+  // Crop selected for the drawn polygon
+  const handleCropAssign = useCallback(
     (crop: CropKey) => {
-      const c = contracts[crop];
-      setContract(c);
-      setState("HISTORY");
-      if (pin) weather.fetchAndAnalyze(pin.lat, pin.lng, c);
+      if (!pendingCoords) return;
+      const cent = computeCentroid(pendingCoords);
+      const parcel: FarmerParcel = {
+        id: `parcel-${Date.now()}`,
+        coordinates: pendingCoords,
+        hectares: pendingHectares,
+        crop,
+        centroid: cent,
+      };
+      setParcels((prev) => [...prev, parcel]);
+      setPendingCoords(null);
+      setPendingHectares(0);
+      setState("PARCELS");
     },
-    [pin, weather],
+    [pendingCoords, pendingHectares],
   );
 
-  const handleBack = useCallback(() => {
-    if (state === "CROP_SELECT") {
-      setPin(null);
-      setEnrichment(null);
-      setState("MAP_SELECT");
-    } else if (state === "HISTORY") {
-      setContract(null);
-      setState("CROP_SELECT");
-    } else if (state === "COVERAGE") {
-      setState("HISTORY");
-    }
-  }, [state]);
+  // Add another field
+  const handleAddMore = useCallback(() => {
+    setState("DRAWING");
+  }, []);
 
-  const handleRestart = useCallback(() => {
-    setPin(null);
-    setEnrichment(null);
-    setContract(null);
-    setState("MAP_SELECT");
+  // Continue to coverage analysis — use the first/largest parcel
+  const handleContinue = useCallback(() => {
+    if (parcels.length === 0) return;
+    // Pick the largest parcel for the demo
+    const largest = [...parcels].sort((a, b) => b.hectares - a.hectares)[0];
+    setActiveParcel(largest);
+    const c = contracts[largest.crop];
+    setContract(c);
+    setState("HISTORY");
+
+    // Enrich and fetch weather for the parcel centroid
+    enrichField(largest.centroid).then(setEnrichment);
+    weather.fetchAndAnalyze(largest.centroid.lat, largest.centroid.lng, c);
+  }, [parcels, weather]);
+
+  // Remove a parcel
+  const handleRemove = useCallback((id: string) => {
+    setParcels((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
   const handleSeeCoverage = useCallback(() => setState("COVERAGE"), []);
   const handleSimulate = useCallback(() => setState("SIMULATION"), []);
 
-  const mapDimmed = state === "CROP_SELECT" || state === "COVERAGE";
-  const showBack = state === "CROP_SELECT" || state === "HISTORY" || state === "COVERAGE";
+  const handleRestart = useCallback(() => {
+    setParcels([]);
+    setActiveParcel(null);
+    setContract(null);
+    setEnrichment(null);
+    setState("DRAWING");
+  }, []);
+
+  const handleBack = useCallback(() => {
+    if (state === "ASSIGN_CROP") {
+      setPendingCoords(null);
+      setState(parcels.length > 0 ? "PARCELS" : "DRAWING");
+    } else if (state === "PARCELS") {
+      setState("DRAWING");
+    } else if (state === "HISTORY") {
+      setActiveParcel(null);
+      setContract(null);
+      setState("PARCELS");
+    } else if (state === "COVERAGE") {
+      setState("HISTORY");
+    }
+  }, [state, parcels.length]);
+
+  const drawingEnabled = state === "DRAWING" || state === "PARCELS";
+  const showBack = state === "ASSIGN_CROP" || state === "HISTORY" || state === "COVERAGE";
+  const mapDimmed = state === "ASSIGN_CROP" || state === "COVERAGE";
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-bg-primary">
-      <MapView
-        pin={pin}
-        onPinDrop={handlePinDrop}
-        appState={state}
+      <DrawableMap
+        parcels={parcels}
+        drawingEnabled={drawingEnabled}
+        onPolygonComplete={handlePolygonComplete}
         dimmed={mapDimmed}
       />
 
-      {/* Language toggle — always top-right */}
+      {/* Top bar */}
+      <div className="absolute top-4 left-4 z-40 flex items-center gap-2">
+        <Link
+          href="/"
+          className="px-3 py-1.5 bg-bg-secondary/80 backdrop-blur-md border border-border-subtle
+                     rounded-lg text-text-secondary text-xs hover:text-text-primary transition-all"
+        >
+          ← Niva
+        </Link>
+        {showBack && (
+          <motion.button
+            onClick={handleBack}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-secondary border border-border-subtle
+                       rounded-lg text-text-secondary text-xs hover:text-text-primary transition-all cursor-pointer"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <ArrowLeft className="w-3 h-3" />
+            {locale === "bg" ? "Назад" : "Back"}
+          </motion.button>
+        )}
+      </div>
+
+      {/* Language toggle */}
       <div className="absolute top-4 right-4 z-50">
         <LanguageToggle />
       </div>
 
-      {/* Back button */}
-      {showBack && (
-        <motion.button
-          onClick={handleBack}
-          className={`absolute ${state === "HISTORY" ? "top-14" : "top-4"} left-4 z-40 flex items-center gap-1.5 px-3 py-1.5
-                     bg-bg-secondary border border-border-subtle
-                     rounded-lg text-text-secondary text-xs hover:text-text-primary
-                     hover:brightness-110 transition-all cursor-pointer`}
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -10 }}
-        >
-          <ArrowLeft className="w-3 h-3" />
-          {t("back")}
-        </motion.button>
+      {/* Field info bar when viewing analysis */}
+      {activeParcel && enrichment && (state === "HISTORY" || state === "COVERAGE") && (
+        <FieldInfoBar pin={activeParcel.centroid} enrichment={enrichment} />
       )}
 
-      {/* Field info bar */}
-      {pin && enrichment && state !== "MAP_SELECT" && state !== "SIMULATION" && (
-        <FieldInfoBar pin={pin} enrichment={enrichment} />
+      {/* Parcel sidebar — visible when we have parcels and in drawing/parcels mode */}
+      {parcels.length > 0 && (state === "DRAWING" || state === "PARCELS") && (
+        <ParcelSidebar
+          parcels={parcels}
+          onAddMore={handleAddMore}
+          onContinue={handleContinue}
+          onRemove={handleRemove}
+        />
       )}
 
       <AnimatePresence mode="wait">
-        {state === "CROP_SELECT" && (
-          <CropSelector key="crop" onSelect={handleCropSelect} />
+        {/* Crop assignment after polygon drawn */}
+        {state === "ASSIGN_CROP" && (
+          <ParcelCropSheet
+            key="assign"
+            hectares={pendingHectares}
+            onSelect={handleCropAssign}
+          />
         )}
 
+        {/* Historical analysis */}
         {state === "HISTORY" && contract && (
           <HistoricalTimeline
             key="history"
@@ -119,6 +196,7 @@ export default function FarmerPage() {
           />
         )}
 
+        {/* Coverage card */}
         {state === "COVERAGE" && contract && (
           <CoverageCard
             key="coverage"
@@ -129,6 +207,7 @@ export default function FarmerPage() {
         )}
       </AnimatePresence>
 
+      {/* Simulation */}
       {state === "SIMULATION" && contract && (
         <FrostSimulation
           key="simulation"

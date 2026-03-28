@@ -124,6 +124,19 @@ export interface FieldPin {
   lng: number;
 }
 
+/** A farmer-drawn polygon parcel with assigned crop and computed area */
+export interface FarmerParcel {
+  id: string;
+  /** GeoJSON polygon coordinates [lng, lat][] */
+  coordinates: [number, number][];
+  /** Computed area in hectares from Turf.js */
+  hectares: number;
+  /** Assigned crop type */
+  crop: CropKey;
+  /** Centroid for weather data fetch */
+  centroid: FieldPin;
+}
+
 export interface FieldEnrichment {
   municipality: string;
   elevation: number;
