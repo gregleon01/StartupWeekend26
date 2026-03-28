@@ -155,7 +155,7 @@ export default function WeatherOverlay({
 
       {/* Controls */}
       {showControls && (
-        <div className="absolute top-4 left-4 z-30">
+        <div className="absolute top-14 left-4 z-30">
           <div className="flex items-center gap-1">
             <motion.button
               onClick={() => setOpen((o) => !o)}
