@@ -43,7 +43,7 @@ export default function FieldInfoBar({ pin, enrichment }: FieldInfoBarProps) {
 
   return (
     <motion.div
-      className="absolute top-4 left-1/2 -translate-x-1/2 z-20"
+      className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20"
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.3, type: "spring", damping: 22, stiffness: 180 }}
