@@ -160,12 +160,12 @@ export default function FarmerPage() {
       </Link>
 
       {/* Unified top bar pill — two rows */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 w-[580px]
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40
                       bg-white/8 backdrop-blur-xl border border-white/12 rounded-full
                       overflow-hidden shadow-xl">
 
         {/* Row 1: context label */}
-        <div className="px-8 pt-2 pb-1.5 text-center">
+        <div className="px-10 pt-2 pb-1.5 text-center whitespace-nowrap">
           <motion.p
             key={state}
             className="text-white text-sm font-medium tracking-wide"
@@ -187,7 +187,7 @@ export default function FarmerPage() {
         <div className="h-px bg-white/8 mx-4" />
 
         {/* Row 2: actions */}
-        <div className="flex items-center justify-center gap-1 px-2 pb-1">
+        <div className="flex items-center justify-center gap-1 px-3 pb-1">
           {/* Back — in-flow navigation */}
           <AnimatePresence>
             {showBack && (
@@ -206,8 +206,8 @@ export default function FarmerPage() {
             )}
           </AnimatePresence>
 
-          {/* Divider */}
-          <div className="w-px h-3.5 bg-white/12 mx-1" />
+          {/* Divider — only when Back is visible */}
+          {showBack && <div className="w-px h-3.5 bg-white/12 mx-1" />}
 
           {/* Layers */}
           <button
