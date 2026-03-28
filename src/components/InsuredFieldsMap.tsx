@@ -148,23 +148,23 @@ export default function InsuredFieldsMap({ fields }: InsuredFieldsMapProps) {
       </Map>
 
       {/* Color mode toggle */}
-      <div className="absolute top-4 right-4 z-50 flex gap-1 bg-white/8 backdrop-blur-xl border border-white/12 rounded-full p-1 text-xs pointer-events-auto shadow-xl">
+      <div className="absolute top-4 right-4 z-50 flex bg-black/40 backdrop-blur-xl border border-white/15 rounded-full p-1 text-xs pointer-events-auto shadow-xl">
         <button
           onClick={() => setColorMode("risk")}
-          className={`px-3 py-1.5 rounded transition-colors ${
+          className={`px-4 py-1.5 rounded-full font-medium transition-all ${
             colorMode === "risk"
-              ? "bg-white/15 text-white"
-              : "text-white/50 hover:text-white/70"
+              ? "bg-white text-black shadow-sm"
+              : "text-white/60 hover:text-white"
           }`}
         >
           Risk
         </button>
         <button
           onClick={() => setColorMode("zone")}
-          className={`px-3 py-1.5 rounded transition-colors ${
+          className={`px-4 py-1.5 rounded-full font-medium transition-all ${
             colorMode === "zone"
-              ? "bg-white/15 text-white"
-              : "text-white/50 hover:text-white/70"
+              ? "bg-white text-black shadow-sm"
+              : "text-white/60 hover:text-white"
           }`}
         >
           Station Zones
