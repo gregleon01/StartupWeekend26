@@ -214,7 +214,7 @@ export default function DrawableMap({
         doubleClickZoom={!drawingEnabled}
       >
         <WeatherOverlay
-          showControls={!isDrawing}
+          showControls={false}
           defaultMode="none"
           externalMode={weatherMode}
           onModeChange={onWeatherModeChange}

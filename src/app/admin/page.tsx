@@ -1,8 +1,12 @@
 "use client";
 
 import { useMemo, useEffect, useState, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Shield, TrendingUp, MapPin, AlertTriangle, Banknote, BarChart3, Radio, ArrowLeft, Activity, Layers, Zap, CheckCircle, XCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Shield, TrendingUp, MapPin, AlertTriangle, Banknote, BarChart3,
+  Radio, ArrowLeft, Activity, Layers, Zap, CheckCircle, XCircle,
+  Eye, Users, Droplets, ThermometerSnowflake,
+} from "lucide-react";
 import Link from "next/link";
 import { generateMockFields, computeFieldStats } from "@/lib/mockFields";
 import { computePortfolioRisk } from "@/lib/statistics";
@@ -11,511 +15,409 @@ import { usePortfolioWeather } from "@/hooks/usePortfolioWeather";
 import type { CropKey, MockField } from "@/types";
 import InsuredFieldsMap from "@/components/InsuredFieldsMap";
 
-function useCountUp(target: number, duration: number = 1200, delay: number = 0) {
-  const [value, setValue] = useState(0);
-  const frame = useRef(0);
+/* ------------------------------------------------------------------ */
+/*  Hooks                                                              */
+/* ------------------------------------------------------------------ */
+
+function useCountUp(target: number, dur = 1200, delay = 0) {
+  const [v, setV] = useState(0);
+  const f = useRef(0);
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      const start = performance.now();
-      const tick = (now: number) => {
-        const progress = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        setValue(Math.round(target * eased));
-        if (progress < 1) frame.current = requestAnimationFrame(tick);
+    const to = setTimeout(() => {
+      const s = performance.now();
+      const tick = (n: number) => {
+        const p = Math.min((n - s) / dur, 1);
+        setV(Math.round(target * (1 - Math.pow(1 - p, 3))));
+        if (p < 1) f.current = requestAnimationFrame(tick);
       };
-      frame.current = requestAnimationFrame(tick);
+      f.current = requestAnimationFrame(tick);
     }, delay);
-    return () => { clearTimeout(timeout); cancelAnimationFrame(frame.current); };
-  }, [target, duration, delay]);
-  return value;
+    return () => { clearTimeout(to); cancelAnimationFrame(f.current); };
+  }, [target, dur, delay]);
+  return v;
 }
 
 /* ------------------------------------------------------------------ */
-/*  Crop colors + helpers                                              */
+/*  Data helpers                                                       */
 /* ------------------------------------------------------------------ */
 
 const CROP_COLORS: Record<CropKey, string> = {
   cherries: "#EF5350", grapes: "#AB47BC", wheat: "#F5A623", sunflower: "#66BB6A",
 };
-
-const MONTH_WEIGHTS: Record<CropKey, number[]> = {
-  cherries:  [0, 0, 0, 0.2, 0.6, 0.2, 0, 0, 0, 0, 0, 0],
-  grapes:    [0, 0, 0, 0.1, 0.5, 0.4, 0, 0, 0, 0, 0, 0],
-  wheat:     [0, 0, 0.3, 0.5, 0.2, 0, 0, 0, 0, 0, 0, 0],
-  sunflower: [0, 0, 0, 0, 0.3, 0.5, 0.2, 0, 0, 0, 0, 0],
+const MW: Record<CropKey, number[]> = {
+  cherries: [0,0,0,.2,.6,.2,0,0,0,0,0,0], grapes: [0,0,0,.1,.5,.4,0,0,0,0,0,0],
+  wheat: [0,0,.3,.5,.2,0,0,0,0,0,0,0], sunflower: [0,0,0,0,.3,.5,.2,0,0,0,0,0],
 };
-const MONTHS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+const MO = ["J","F","M","A","M","J","J","A","S","O","N","D"];
+const ACTIVITY_TIMES = ["2h","2h","3h","3h","4h","4h","5h","5h"];
 
-function computeMonthlyTriggers(fields: MockField[]) {
-  const triggered = fields.filter((f) => f.payoutTriggered);
-  const counts = new Array(12).fill(0);
-  for (const f of triggered) {
-    const w = MONTH_WEIGHTS[f.crop];
-    for (let m = 0; m < 12; m++) counts[m] += w[m] * f.hectares;
-  }
-  return counts;
+function monthlyTriggers(fields: MockField[]) {
+  const t = fields.filter(f => f.payoutTriggered);
+  const c = new Array(12).fill(0);
+  for (const f of t) { const w = MW[f.crop]; for (let m=0;m<12;m++) c[m] += w[m]*f.hectares; }
+  return c;
 }
-
-function computeCropBreakdown(fields: MockField[]) {
-  const triggered = fields.filter((f) => f.payoutTriggered);
-  return (["cherries", "grapes", "wheat", "sunflower"] as CropKey[]).map((crop) => {
-    const cropFields = triggered.filter((f) => f.crop === crop);
-    const total = cropFields.reduce((sum, f) => sum + f.payoutAmount * f.hectares, 0);
-    const covered = fields.filter((f) => f.crop === crop && f.covered);
-    const ha = covered.reduce((sum, f) => sum + f.hectares, 0);
-    return { crop, total, count: cropFields.length, ha: Math.round(ha), fields: covered.length };
+function cropBreakdown(fields: MockField[]) {
+  const t = fields.filter(f => f.payoutTriggered);
+  return (["cherries","grapes","wheat","sunflower"] as CropKey[]).map(crop => {
+    const cf = t.filter(f => f.crop === crop);
+    const total = cf.reduce((s,f) => s + f.payoutAmount*f.hectares, 0);
+    const covered = fields.filter(f => f.crop === crop && f.covered);
+    return { crop, total, count: cf.length, ha: Math.round(covered.reduce((s,f) => s+f.hectares, 0)), fields: covered.length };
   });
 }
-
-const ACTIVITY_TIMES = ["2h ago", "2h ago", "3h ago", "3h ago", "4h ago", "4h ago", "5h ago", "5h ago"];
 
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
 export default function AdminPage() {
-  const { triggerRates, loading: weatherLoading, isLiveData } = usePortfolioWeather();
-
+  const { triggerRates, loading: wl, isLiveData } = usePortfolioWeather();
   const fields = useMemo(() => generateMockFields(triggerRates), [triggerRates]);
   const stats = useMemo(() => computeFieldStats(fields), [fields]);
   const portfolio = useMemo(() => computePortfolioRisk(fields, triggerRates), [fields, triggerRates]);
-  const cropData = useMemo(() => computeCropBreakdown(fields), [fields]);
-  const monthCounts = useMemo(() => computeMonthlyTriggers(fields), [fields]);
+  const crops = useMemo(() => cropBreakdown(fields), [fields]);
+  const months = useMemo(() => monthlyTriggers(fields), [fields]);
+  const maxCrop = Math.max(...crops.map(d => d.total), 1);
+  const maxMo = Math.max(...months, 1);
 
-  const recentActivity = useMemo(
-    () => fields.filter((f) => f.payoutTriggered).slice(0, 8).map((f, i) => ({
-      fieldId: f.id, crop: f.crop, amount: f.payoutAmount,
-      time: ACTIVITY_TIMES[i] ?? "5h ago",
-    })),
-    [fields],
-  );
+  const activity = useMemo(() =>
+    fields.filter(f => f.payoutTriggered).slice(0, 8).map((f, i) => ({
+      id: f.id, crop: f.crop, amount: f.payoutAmount, ha: f.hectares,
+      time: ACTIVITY_TIMES[i] ?? "5h",
+    })), [fields]);
 
-  const animFields = useCountUp(stats.fieldsInsured, 1200, 200);
-  const animHa = useCountUp(stats.hectaresCovered, 1200, 350);
-  const animPremiums = useCountUp(stats.premiumsCollected, 1200, 500);
-  const animTriggered = useCountUp(stats.payoutsTriggered, 1200, 650);
-  const animPaid = useCountUp(stats.totalPaidOut, 1200, 800);
+  const aF = useCountUp(stats.fieldsInsured, 1200, 200);
+  const aH = useCountUp(stats.hectaresCovered, 1200, 350);
+  const aP = useCountUp(stats.premiumsCollected, 1200, 500);
+  const aT = useCountUp(stats.payoutsTriggered, 1200, 650);
+  const aPd = useCountUp(stats.totalPaidOut, 1200, 800);
 
-  // Interactive: payout approval status
-  const [payoutStatuses, setPayoutStatuses] = useState<Record<number, "pending" | "approved" | "rejected">>({});
-  const handleApprove = useCallback((fieldId: number) => {
-    setPayoutStatuses((prev) => ({ ...prev, [fieldId]: "approved" }));
-  }, []);
-  const handleReject = useCallback((fieldId: number) => {
-    setPayoutStatuses((prev) => ({ ...prev, [fieldId]: "rejected" }));
-  }, []);
+  const lr = stats.premiumsCollected > 0 ? stats.totalPaidOut / stats.premiumsCollected : 0;
+  const lrC = lr < .6 ? "text-success-green" : lr < 1 ? "text-accent-amber" : "text-danger-red";
+  const lrL = lr < .6 ? "Healthy" : lr < 1 ? "Moderate" : "Unprofitable";
 
-  // Simulate regional frost event
-  const [simulating, setSimulating] = useState(false);
-  const [simProgress, setSimProgress] = useState(0);
-  const handleSimulateRegion = useCallback(() => {
-    if (simulating) return;
-    setSimulating(true);
-    setSimProgress(0);
-    let step = 0;
-    const total = 20;
+  const covRate = fields.length ? Math.round(fields.filter(f => f.covered).length / fields.length * 100) : 0;
+
+  // Payout trend (synthetic from field data)
+  const trend = useMemo(() => {
+    const base = fields.filter(f => f.payoutTriggered).reduce((s,f) => s + f.payoutAmount*f.hectares, 0);
+    const w = [.5,.7,1.3,.8,1.1,1.0];
+    return [2020,2021,2022,2023,2024,2025].map((y,i) => ({ y, v: Math.round(base/6*w[i]) }));
+  }, [fields]);
+  const avg5 = Math.round(trend.reduce((s,t) => s+t.v, 0) / trend.length);
+
+  // Interactive states
+  const [claimStatus, setCS] = useState<Record<number, "a"|"r">>({});
+  const [simming, setSimming] = useState(false);
+  const [simProg, setSimProg] = useState(0);
+  const [activeTab, setActiveTab] = useState<"claims"|"risk"|"forecast">("claims");
+  const [selectedField, setSelectedField] = useState<MockField | null>(null);
+
+  const doSim = useCallback(() => {
+    if (simming) return;
+    setSimming(true); setSimProg(0);
+    let s = 0;
     const iv = setInterval(() => {
-      step++;
-      setSimProgress(step / total);
-      if (step >= total) {
-        clearInterval(iv);
-        setTimeout(() => { setSimulating(false); setSimProgress(0); }, 1500);
-      }
+      s++; setSimProg(s/20);
+      if (s >= 20) { clearInterval(iv); setTimeout(() => { setSimming(false); setSimProg(0); }, 1500); }
     }, 150);
-  }, [simulating]);
-
-  const lossRatio = stats.premiumsCollected > 0 ? stats.totalPaidOut / stats.premiumsCollected : 0;
-  const lossColor = lossRatio < 0.6 ? "text-success-green" : lossRatio < 1.0 ? "text-accent-amber" : "text-danger-red";
-  const lossLabel = lossRatio < 0.6 ? "Healthy" : lossRatio < 1.0 ? "Moderate" : "Unprofitable";
-
-  const maxCropTotal = Math.max(...cropData.map((d) => d.total), 1);
-  const maxMonth = Math.max(...monthCounts, 1);
-
-  // Forecast & Trends data
-  const annualPayoutTrend = useMemo(() => {
-    const triggered = fields.filter((f) => f.payoutTriggered);
-    const basePayout = triggered.reduce((s, f) => s + f.payoutAmount * f.hectares, 0);
-    // Distribute across years 2020-2025 with some variance
-    const yearWeights = [0.6, 0.8, 1.2, 0.9, 1.1, 1.0];
-    return [2020, 2021, 2022, 2023, 2024, 2025].map((year, i) => ({
-      year,
-      payout: Math.round((basePayout / 6) * yearWeights[i]),
-    }));
-  }, [fields]);
-
-  const coverageRate = useMemo(() => {
-    if (fields.length === 0) return 0;
-    return Math.round((fields.filter((f) => f.covered).length / fields.length) * 100);
-  }, [fields]);
-
-  const fiveYrAvg = useMemo(() => {
-    const total = annualPayoutTrend.reduce((s, y) => s + y.payout, 0);
-    return Math.round(total / annualPayoutTrend.length);
-  }, [annualPayoutTrend]);
+  }, [simming]);
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-bg-primary">
-      {/* Map — full bleed, top 55% of screen */}
-      <div className="absolute inset-0 bottom-[45vh]">
+      {/* Map — upper portion */}
+      <div className="absolute inset-0 bottom-[42vh]">
         <InsuredFieldsMap fields={fields} />
       </div>
 
-      {/* Aklima home — top left */}
-      <Link
-        href="/"
+      {/* Simulation flash overlay */}
+      <AnimatePresence>
+        {simming && (
+          <motion.div
+            className="absolute inset-0 bottom-[42vh] z-20 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="absolute inset-0 bg-frost-blue/10" />
+            <motion.div
+              className="absolute bottom-0 left-0 right-0 h-1 bg-danger-red"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: simProg }}
+              style={{ transformOrigin: "left" }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Top nav */}
+      <Link href="/"
         className="absolute top-4 left-4 z-40 flex items-center gap-1.5 px-4 py-2
                    bg-white/8 backdrop-blur-xl border border-white/12 rounded-full
-                   text-white/60 text-xs hover:text-white hover:bg-white/14 transition-all shadow-xl outline-none"
-      >
-        <ArrowLeft className="w-3 h-3" />
-        Aklima
+                   text-white/60 text-xs hover:text-white hover:bg-white/14 transition-all shadow-xl outline-none">
+        <ArrowLeft className="w-3 h-3" /> Aklima
       </Link>
 
-      {/* Title chip — centered */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40">
         <div className="flex items-center gap-3 px-5 py-2 bg-white/8 backdrop-blur-xl border border-white/12 rounded-full shadow-xl">
           <Shield className="w-4 h-4 text-accent-amber" />
-          <span className="text-white text-sm font-medium">Insurer Dashboard</span>
+          <span className="text-white text-sm font-medium">Portfolio Command</span>
           <span className="text-white/20">·</span>
-          <span className="text-white/60 text-xs">Kyustendil Region</span>
+          <span className="text-white/50 text-xs">Kyustendil</span>
           <span className="text-white/20">·</span>
-          {weatherLoading ? (
-            <span className="text-white/40 text-xs animate-pulse">Loading…</span>
-          ) : (
+          {wl ? <span className="text-white/40 text-xs animate-pulse">Syncing…</span> : (
             <span className={`flex items-center gap-1 text-xs ${isLiveData ? "text-success-green" : "text-white/40"}`}>
-              <Radio className="w-3 h-3" />
-              {isLiveData ? "Live data" : "Fallback"}
+              <Radio className="w-3 h-3" /> {isLiveData ? "Live" : "Offline"}
             </span>
           )}
         </div>
       </div>
 
-      {/* Bottom dashboard panel */}
+      {/* Bottom panel */}
       <motion.div
-        className="absolute left-0 right-0 bottom-0 h-[48vh] z-30
-                   bg-white/8 backdrop-blur-2xl border-t border-white/12 shadow-2xl"
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        transition={{ type: "tween", duration: 0.4, ease: "easeOut", delay: 0.15 }}
+        className="absolute left-0 right-0 bottom-0 h-[44vh] z-30 bg-white/6 backdrop-blur-2xl border-t border-white/10 shadow-2xl"
+        initial={{ y: "100%" }} animate={{ y: 0 }}
+        transition={{ type: "tween", duration: 0.35, ease: "easeOut", delay: 0.1 }}
       >
-        {/* Stats row — top edge of panel */}
-        <div className="flex items-center gap-5 px-8 py-3 border-b border-white/8 overflow-x-auto">
-          <StatPill icon={<MapPin className="w-3.5 h-3.5" />} value={animFields} label="Fields" />
-          <div className="w-px h-4 bg-white/10" />
-          <StatPill icon={<TrendingUp className="w-3.5 h-3.5" />} value={animHa} label="ha" />
-          <div className="w-px h-4 bg-white/10" />
-          <StatPill icon={<Banknote className="w-3.5 h-3.5" />} value={animPremiums} label="Premiums" prefix="€" amber />
-          <div className="w-px h-4 bg-white/10" />
-          <StatPill icon={<AlertTriangle className="w-3.5 h-3.5" />} value={animTriggered} label="Triggered" danger />
-          <div className="w-px h-4 bg-white/10" />
-          <StatPill icon={<Banknote className="w-3.5 h-3.5" />} value={animPaid} label="Paid Out" prefix="€" danger />
-          <div className="w-px h-4 bg-white/10" />
+        {/* Stats bar */}
+        <div className="flex items-center gap-4 px-6 py-2.5 border-b border-white/8 overflow-x-auto text-xs">
+          <Stat icon={<Users className="w-3.5 h-3.5" />} v={aF} l="Fields" />
+          <Sep /><Stat icon={<MapPin className="w-3.5 h-3.5" />} v={aH} l="ha" />
+          <Sep /><Stat icon={<Banknote className="w-3.5 h-3.5" />} v={aP} l="Premiums" p="€" c="text-accent-amber" />
+          <Sep /><Stat icon={<AlertTriangle className="w-3.5 h-3.5" />} v={aT} l="Triggered" c="text-danger-red" />
+          <Sep /><Stat icon={<Banknote className="w-3.5 h-3.5" />} v={aPd} l="Paid" p="€" c="text-danger-red" />
+          <Sep />
           <div className="flex items-center gap-1.5 whitespace-nowrap">
-            <Activity className="w-3.5 h-3.5 text-white/40" />
-            <span className={`font-mono text-sm font-bold ${lossColor}`}>{Math.round(lossRatio * 100)}%</span>
-            <span className="text-white/40 text-xs">Loss Ratio</span>
-            <span className={`text-[9px] font-medium uppercase tracking-wider ${lossColor}`}>({lossLabel})</span>
+            <Activity className="w-3.5 h-3.5 text-white/30" />
+            <span className={`font-mono text-sm font-bold ${lrC}`}>{Math.round(lr*100)}%</span>
+            <span className={`text-[9px] font-medium uppercase ${lrC}`}>{lrL}</span>
           </div>
-          <div className="w-px h-4 bg-white/10" />
-          <button
-            onClick={handleSimulateRegion}
-            disabled={simulating}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap
-                       transition-all cursor-pointer ${
-                         simulating
-                           ? "bg-danger-red/20 text-danger-red"
-                           : "bg-accent-amber/15 text-accent-amber hover:bg-accent-amber/25"
-                       }`}
-          >
+          <Sep />
+          <button onClick={doSim} disabled={simming}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full font-medium whitespace-nowrap transition-all cursor-pointer ${
+              simming ? "bg-danger-red/20 text-danger-red animate-pulse" : "bg-accent-amber/15 text-accent-amber hover:bg-accent-amber/25"
+            }`}>
             <Zap className="w-3 h-3" />
-            {simulating ? `Simulating... ${Math.round(simProgress * 100)}%` : "Simulate Regional Frost"}
+            {simming ? `${Math.round(simProg*100)}%` : "Simulate Frost"}
           </button>
         </div>
 
-        {/* Charts grid */}
-        <div className="grid grid-cols-5 gap-0 h-[calc(100%-52px)]">
+        {/* Tab bar */}
+        <div className="flex items-center gap-1 px-6 py-2 border-b border-white/6">
+          <Tab active={activeTab === "claims"} onClick={() => setActiveTab("claims")} icon={<CheckCircle className="w-3 h-3" />} label="Claims" count={activity.length} />
+          <Tab active={activeTab === "risk"} onClick={() => setActiveTab("risk")} icon={<Shield className="w-3 h-3" />} label="Risk Analysis" />
+          <Tab active={activeTab === "forecast"} onClick={() => setActiveTab("forecast")} icon={<TrendingUp className="w-3 h-3" />} label="Forecasts" />
+        </div>
 
-          {/* Column 1: Crop Breakdown */}
-          <div className="border-r border-white/8 px-5 py-4 overflow-y-auto">
-            <p className="text-white/50 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
-              <Layers className="w-3 h-3" />
-              Crop Exposure
-            </p>
-            {cropData.map((d, i) => (
-              <div key={d.crop} className="mb-3">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-white/70 flex items-center gap-1.5">
-                    <span>{contracts[d.crop]?.icon}</span>
-                    <span>{contracts[d.crop]?.crop}</span>
-                  </span>
-                  <span className="font-mono text-white font-bold text-[11px]">
-                    €{Math.round(d.total).toLocaleString()}
-                  </span>
-                </div>
-                <div className="h-1.5 bg-white/6 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: CROP_COLORS[d.crop] }}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(d.total / maxCropTotal) * 100}%` }}
-                    transition={{ delay: 0.3 + i * 0.1, duration: 0.8, ease: "easeOut" }}
-                  />
-                </div>
-                <div className="flex justify-between text-[9px] text-white/30 mt-0.5">
-                  <span>{d.fields} fields · {d.ha} ha</span>
-                  <span>{d.count} triggered</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Column 2: Monthly Trigger Heatmap */}
-          <div className="border-r border-white/8 px-5 py-4">
-            <p className="text-white/50 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
-              <BarChart3 className="w-3 h-3" />
-              Monthly Triggers
-            </p>
-            <svg width="100%" height="180" viewBox="0 0 240 180" preserveAspectRatio="xMidYMid meet">
-              {monthCounts.map((count, i) => {
-                const barW = 16;
-                const gap = 4;
-                const chartH = 150;
-                const x = i * (barW + gap);
-                const pct = count / maxMonth;
-                const h = pct * chartH;
-                const active = count > 0;
-                return (
-                  <g key={i}>
-                    <rect x={x} y={0} width={barW} height={chartH} rx={3} fill="rgba(255,255,255,0.04)" />
-                    <motion.rect
-                      x={x} width={barW} rx={3}
-                      fill={active ? "#F5A623" : "rgba(255,255,255,0.04)"}
-                      opacity={active ? 0.85 : 0.3}
-                      initial={{ height: 0, y: chartH }}
-                      animate={{ height: h, y: chartH - h }}
-                      transition={{ delay: 0.2 + i * 0.04, duration: 0.6, ease: "easeOut" }}
-                    />
-                    <text x={x + barW / 2} y={chartH + 14} textAnchor="middle"
-                      fill={active ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.2)"}
-                      fontSize="9" fontFamily="monospace">
-                      {MONTHS[i]}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-          </div>
-
-          {/* Column 3: Portfolio Risk */}
-          <div className="border-r border-white/8 px-5 py-4">
-            <p className="text-white/50 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
-              <Shield className="w-3 h-3" />
-              Portfolio Risk
-            </p>
-            <div className="space-y-3">
-              <RiskRow label="Total Exposure" value={`€${portfolio.totalExposure.toLocaleString()}`} />
-              <RiskRow label="Expected Annual" value={`€${portfolio.expectedAnnualPayout.toLocaleString()}`} />
-              <RiskRow label="VaR 95%" value={`€${portfolio.valueAtRisk95.toLocaleString()}`} highlight />
-              <RiskRow label="Max Possible" value={`€${portfolio.maxPossiblePayout.toLocaleString()}`} />
-              <div className="h-px bg-white/8" />
-              <RiskRow label="Correlation Zones" value={String(portfolio.correlationZones)} />
-              <RiskRow label="Diversification" value={`${Math.round(portfolio.diversificationBenefit * 100)}%`} />
-            </div>
-
-            {/* Legend */}
-            <div className="mt-4 space-y-1.5">
-              <p className="text-white/30 text-[9px] uppercase tracking-widest mb-1">Map Legend</p>
-              <LegendDot color="#66BB6A" label="Covered" />
-              <LegendDot color="#F5A623" label="High risk" />
-              <LegendDot color="#EF5350" label="Triggered" />
-              <LegendDot color="#555555" label="Uninsured" />
-            </div>
-          </div>
-
-          {/* Column 4: Claim Queue */}
-          <div className="border-r border-white/8 px-5 py-4 overflow-y-auto">
-            <p className="text-white/50 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
-              <Activity className="w-3 h-3" />
-              Claim Queue
-            </p>
-            <div className="space-y-2">
-              {recentActivity.map((item, i) => {
-                const status = payoutStatuses[item.fieldId] ?? "pending";
-                return (
-                  <motion.div
-                    key={i}
-                    className={`p-2.5 rounded-xl border transition-colors ${
-                      status === "approved" ? "bg-success-green/8 border-success-green/20" :
-                      status === "rejected" ? "bg-danger-red/8 border-danger-red/20 opacity-50" :
-                      "bg-white/4 border-white/6"
-                    }`}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: status === "rejected" ? 0.4 : 1, y: 0 }}
-                    transition={{ delay: 0.3 + i * 0.06, duration: 0.3 }}
-                  >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">{contracts[item.crop]?.icon}</span>
-                        <div>
-                          <p className="text-white text-[10px] font-medium">Field #{item.fieldId}</p>
-                          <p className="text-white/30 text-[9px]">{contracts[item.crop]?.crop} · {item.time}</p>
+        {/* Tab content */}
+        <div className="h-[calc(100%-88px)] overflow-y-auto">
+          <AnimatePresence mode="wait">
+            {activeTab === "claims" && (
+              <motion.div key="claims" className="grid grid-cols-4 gap-3 p-5"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                {activity.map((item, i) => {
+                  const st = claimStatus[item.id];
+                  return (
+                    <motion.div key={item.id}
+                      className={`p-3 rounded-2xl border transition-all ${
+                        st === "a" ? "bg-success-green/8 border-success-green/20" :
+                        st === "r" ? "bg-white/2 border-white/4 opacity-40" :
+                        "bg-white/4 border-white/8 hover:border-white/15"
+                      }`}
+                      initial={{ opacity: 0, y: 15 }} animate={{ opacity: st === "r" ? .4 : 1, y: 0 }}
+                      transition={{ delay: i * .05 }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">{contracts[item.crop]?.icon}</span>
+                        <div className="flex-1">
+                          <p className="text-white text-[11px] font-medium">Field #{item.id}</p>
+                          <p className="text-white/30 text-[9px]">{contracts[item.crop]?.crop} · {item.ha}ha · {item.time} ago</p>
                         </div>
+                        <span className="font-mono text-danger-red text-sm font-bold">€{Math.round(item.amount * item.ha).toLocaleString()}</span>
                       </div>
-                      <p className="font-mono text-danger-red text-[11px] font-bold">€{item.amount}</p>
+                      {!st ? (
+                        <div className="flex gap-2">
+                          <button onClick={() => setCS(p => ({...p, [item.id]: "a"}))}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-success-green/12 text-success-green
+                                       text-[10px] font-semibold rounded-xl hover:bg-success-green/20 transition-all cursor-pointer">
+                            <CheckCircle className="w-3.5 h-3.5" /> Approve
+                          </button>
+                          <button onClick={() => setCS(p => ({...p, [item.id]: "r"}))}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white/6 text-white/40
+                                       text-[10px] font-semibold rounded-xl hover:bg-danger-red/12 hover:text-danger-red transition-all cursor-pointer">
+                            <XCircle className="w-3.5 h-3.5" /> Reject
+                          </button>
+                        </div>
+                      ) : (
+                        <p className={`text-[10px] font-semibold uppercase tracking-wider text-center py-1.5 ${st === "a" ? "text-success-green" : "text-white/30"}`}>
+                          {st === "a" ? "✓ Approved · Paying out" : "✗ Rejected"}
+                        </p>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            )}
+
+            {activeTab === "risk" && (
+              <motion.div key="risk" className="grid grid-cols-3 gap-5 p-5"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                {/* Crop exposure */}
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <Layers className="w-3 h-3" /> Crop Exposure
+                  </p>
+                  {crops.map((d, i) => (
+                    <div key={d.crop} className="mb-3">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-white/60 flex items-center gap-1.5">
+                          {contracts[d.crop]?.icon} {contracts[d.crop]?.crop}
+                        </span>
+                        <span className="font-mono text-white font-bold text-[11px]">€{Math.round(d.total).toLocaleString()}</span>
+                      </div>
+                      <div className="h-2 bg-white/6 rounded-full overflow-hidden">
+                        <motion.div className="h-full rounded-full" style={{ backgroundColor: CROP_COLORS[d.crop] }}
+                          initial={{ width: 0 }} animate={{ width: `${d.total/maxCrop*100}%` }}
+                          transition={{ delay: .3 + i*.1, duration: .8, ease: "easeOut" }} />
+                      </div>
+                      <p className="text-white/25 text-[9px] mt-0.5">{d.fields} fields · {d.ha}ha · {d.count} triggered</p>
                     </div>
-                    {status === "pending" ? (
-                      <div className="flex gap-1.5">
-                        <button
-                          onClick={() => handleApprove(item.fieldId)}
-                          className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-success-green/15 text-success-green
-                                     text-[9px] font-medium rounded-lg hover:bg-success-green/25 transition-all cursor-pointer"
-                        >
-                          <CheckCircle className="w-3 h-3" /> Approve
-                        </button>
-                        <button
-                          onClick={() => handleReject(item.fieldId)}
-                          className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-white/6 text-white/40
-                                     text-[9px] font-medium rounded-lg hover:bg-danger-red/15 hover:text-danger-red transition-all cursor-pointer"
-                        >
-                          <XCircle className="w-3 h-3" /> Reject
-                        </button>
-                      </div>
-                    ) : (
-                      <p className={`text-[9px] font-medium uppercase tracking-wider ${
-                        status === "approved" ? "text-success-green" : "text-danger-red"
-                      }`}>
-                        {status === "approved" ? "✓ Approved — Processing" : "✗ Rejected"}
-                      </p>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
+                  ))}
+                </div>
 
-          {/* Column 5: Forecast & Trends */}
-          <div className="px-5 py-4 overflow-y-auto">
-            <p className="text-white/50 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
-              <TrendingUp className="w-3 h-3" />
-              Forecast &amp; Trends
-            </p>
-
-            {/* a) Annual Payout Trend — SVG line chart */}
-            {(() => {
-              const W = 200;
-              const H = 100;
-              const padL = 4;
-              const padR = 4;
-              const padT = 8;
-              const padB = 18;
-              const chartW = W - padL - padR;
-              const chartH = H - padT - padB;
-              const data = annualPayoutTrend;
-              const maxP = Math.max(...data.map((d) => d.payout), 1);
-              const pts = data.map((d, i) => ({
-                x: padL + (i / (data.length - 1)) * chartW,
-                y: padT + ((maxP - d.payout) / maxP) * chartH,
-              }));
-              let linePath = `M ${pts[0].x} ${pts[0].y}`;
-              for (let i = 1; i < pts.length; i++) {
-                const cp1x = pts[i - 1].x + (pts[i].x - pts[i - 1].x) * 0.5;
-                const cp2x = pts[i].x - (pts[i].x - pts[i - 1].x) * 0.5;
-                linePath += ` C ${cp1x} ${pts[i - 1].y} ${cp2x} ${pts[i].y} ${pts[i].x} ${pts[i].y}`;
-              }
-              const areaPath = `${linePath} L ${pts[pts.length - 1].x} ${padT + chartH} L ${pts[0].x} ${padT + chartH} Z`;
-              return (
-                <div className="mb-4">
-                  <p className="text-white/40 text-[9px] uppercase tracking-widest mb-1.5">Annual Payout Trend</p>
-                  <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
-                    <defs>
-                      <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#F5A623" stopOpacity="0.25" />
-                        <stop offset="100%" stopColor="#F5A623" stopOpacity="0.02" />
-                      </linearGradient>
-                    </defs>
-                    <path d={areaPath} fill="url(#trendFill)" />
-                    <motion.path
-                      d={linePath}
-                      fill="none"
-                      stroke="#F5A623"
-                      strokeWidth="1.5"
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                      initial={{ pathLength: 0, opacity: 0 }}
-                      animate={{ pathLength: 1, opacity: 1 }}
-                      transition={{ duration: 1.2, ease: "easeOut", delay: 0.4 }}
-                    />
-                    {pts.map((p, i) => (
-                      <motion.circle
-                        key={i}
-                        cx={p.x}
-                        cy={p.y}
-                        r={3}
-                        fill="#F5A623"
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: 0.5 + i * 0.08, duration: 0.25 }}
-                      />
-                    ))}
-                    {data.map((d, i) => (
-                      <text
-                        key={d.year}
-                        x={pts[i].x}
-                        y={H - 4}
-                        textAnchor="middle"
-                        fontSize="8"
-                        fill="rgba(255,255,255,0.3)"
-                        fontFamily="monospace"
-                      >
-                        {String(d.year).slice(2)}
-                      </text>
-                    ))}
+                {/* Monthly heatmap */}
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <BarChart3 className="w-3 h-3" /> Monthly Triggers
+                  </p>
+                  <svg width="100%" height="200" viewBox="0 0 240 200" preserveAspectRatio="xMidYMid meet">
+                    {months.map((c, i) => {
+                      const bw=16, gap=4, ch=170, x=i*(bw+gap), h=(c/maxMo)*ch, active=c>0;
+                      return (<g key={i}>
+                        <rect x={x} y={0} width={bw} height={ch} rx={4} fill="rgba(255,255,255,0.03)" />
+                        <motion.rect x={x} width={bw} rx={4}
+                          fill={active ? "#F5A623" : "transparent"} opacity={active ? .85 : .2}
+                          initial={{ height:0, y:ch }} animate={{ height:h, y:ch-h }}
+                          transition={{ delay:.15+i*.04, duration:.5 }} />
+                        <text x={x+bw/2} y={ch+14} textAnchor="middle"
+                          fill={active ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.15)"}
+                          fontSize="9" fontFamily="monospace">{MO[i]}</text>
+                      </g>);
+                    })}
                   </svg>
                 </div>
-              );
-            })()}
 
-            {/* b) Risk Forecast */}
-            <div className="mb-4">
-              <p className="text-white/40 text-[9px] uppercase tracking-widest mb-2">Risk Forecast</p>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-white/40 text-[11px]">Next Season Est.</span>
-                  <span className="font-mono text-[11px] font-bold text-accent-amber">
-                    &euro;{portfolio.expectedAnnualPayout.toLocaleString()}
-                  </span>
+                {/* Portfolio metrics */}
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <Shield className="w-3 h-3" /> Portfolio Metrics
+                  </p>
+                  <div className="space-y-3">
+                    <Metric l="Total Exposure" v={`€${portfolio.totalExposure.toLocaleString()}`} />
+                    <Metric l="Expected Annual" v={`€${portfolio.expectedAnnualPayout.toLocaleString()}`} />
+                    <Metric l="VaR 95%" v={`€${portfolio.valueAtRisk95.toLocaleString()}`} h />
+                    <Metric l="Max Possible" v={`€${portfolio.maxPossiblePayout.toLocaleString()}`} />
+                    <div className="h-px bg-white/8 my-1" />
+                    <Metric l="Correlation Zones" v={String(portfolio.correlationZones)} />
+                    <Metric l="Diversification" v={`${Math.round(portfolio.diversificationBenefit*100)}%`} />
+                    <div className="h-px bg-white/8 my-1" />
+                    <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1">Coverage</p>
+                    <div className="h-2 bg-white/6 rounded-full overflow-hidden">
+                      <motion.div className="h-full rounded-full bg-success-green"
+                        initial={{ width: 0 }} animate={{ width: `${covRate}%` }}
+                        transition={{ delay: .5, duration: .8 }} />
+                    </div>
+                    <p className="text-white/40 text-[10px]"><span className="font-mono text-white font-bold">{covRate}%</span> regional coverage</p>
+                  </div>
+                  <div className="mt-4 space-y-1">
+                    {[["#66BB6A","Covered"],["#F5A623","High risk"],["#EF5350","Triggered"],["#555","Uninsured"]].map(([c,l]) => (
+                      <div key={l} className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c }} />
+                        <span className="text-white/30 text-[9px]">{l}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-white/40 text-[11px]">5yr Avg Payout</span>
-                  <span className="font-mono text-[11px] font-bold text-white">
-                    &euro;{fiveYrAvg.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-white/40 text-[11px]">Worst Case</span>
-                  <span className="font-mono text-[11px] font-bold text-danger-red">
-                    &euro;{portfolio.maxPossiblePayout.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
+              </motion.div>
+            )}
 
-            {/* c) Coverage Gap */}
-            <div>
-              <p className="text-white/40 text-[9px] uppercase tracking-widest mb-2">Coverage Gap</p>
-              <div className="h-2 bg-white/6 rounded-full overflow-hidden mb-1.5">
-                <motion.div
-                  className="h-full rounded-full bg-success-green"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${coverageRate}%` }}
-                  transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
-                />
-              </div>
-              <p className="text-white/50 text-[10px]">
-                <span className="font-mono text-white font-bold">{coverageRate}%</span> coverage rate
-              </p>
-            </div>
-          </div>
+            {activeTab === "forecast" && (
+              <motion.div key="forecast" className="grid grid-cols-3 gap-5 p-5"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                {/* Trend chart */}
+                <div className="col-span-2">
+                  <p className="text-white/40 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <TrendingUp className="w-3 h-3" /> Annual Payout Trend
+                  </p>
+                  {(() => {
+                    const W=440, H=180, pL=30, pR=10, pT=10, pB=24;
+                    const cW=W-pL-pR, cH=H-pT-pB;
+                    const mx = Math.max(...trend.map(d=>d.v),1);
+                    const pts = trend.map((d,i) => ({ x: pL+i/(trend.length-1)*cW, y: pT+(mx-d.v)/mx*cH }));
+                    let lp = `M ${pts[0].x} ${pts[0].y}`;
+                    for (let i=1; i<pts.length; i++) {
+                      const cx1 = pts[i-1].x + (pts[i].x-pts[i-1].x)*.4;
+                      const cx2 = pts[i].x - (pts[i].x-pts[i-1].x)*.4;
+                      lp += ` C ${cx1} ${pts[i-1].y} ${cx2} ${pts[i].y} ${pts[i].x} ${pts[i].y}`;
+                    }
+                    const ap = `${lp} L ${pts[pts.length-1].x} ${pT+cH} L ${pts[0].x} ${pT+cH} Z`;
+                    return (
+                      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
+                        <defs>
+                          <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#F5A623" stopOpacity=".3" />
+                            <stop offset="100%" stopColor="#F5A623" stopOpacity=".02" />
+                          </linearGradient>
+                        </defs>
+                        {/* Grid lines */}
+                        {[0,.25,.5,.75,1].map(p => (
+                          <line key={p} x1={pL} y1={pT+p*cH} x2={W-pR} y2={pT+p*cH} stroke="rgba(255,255,255,0.05)" />
+                        ))}
+                        <path d={ap} fill="url(#tg)" />
+                        <motion.path d={lp} fill="none" stroke="#F5A623" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
+                          initial={{ pathLength:0 }} animate={{ pathLength:1 }} transition={{ duration:1.5, ease:"easeOut", delay:.3 }} />
+                        {pts.map((p,i) => (
+                          <g key={i}>
+                            <motion.circle cx={p.x} cy={p.y} r={5} fill="#F5A623"
+                              initial={{ scale:0 }} animate={{ scale:1 }} transition={{ delay:.5+i*.1 }} />
+                            <motion.circle cx={p.x} cy={p.y} r={5} fill="none" stroke="rgba(245,166,35,0.3)" strokeWidth={10}
+                              initial={{ scale:0,opacity:0 }} animate={{ scale:1,opacity:1 }} transition={{ delay:.5+i*.1 }} />
+                            <text x={p.x} y={p.y-12} textAnchor="middle" fontSize="10" fontFamily="monospace"
+                              fill="rgba(255,255,255,0.6)" fontWeight="bold">
+                              €{(trend[i].v/1000).toFixed(0)}k
+                            </text>
+                            <text x={p.x} y={H-4} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.25)" fontFamily="monospace">
+                              {String(trend[i].y).slice(2)}
+                            </text>
+                          </g>
+                        ))}
+                      </svg>
+                    );
+                  })()}
+                </div>
+
+                {/* Forecast metrics */}
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <ThermometerSnowflake className="w-3 h-3" /> Season Forecast
+                  </p>
+                  <div className="space-y-4">
+                    <BigMetric label="Next Season Est." value={`€${portfolio.expectedAnnualPayout.toLocaleString()}`} color="text-accent-amber" />
+                    <BigMetric label="5-Year Average" value={`€${avg5.toLocaleString()}`} color="text-white" />
+                    <BigMetric label="Worst Case Scenario" value={`€${portfolio.maxPossiblePayout.toLocaleString()}`} color="text-danger-red" />
+                    <div className="h-px bg-white/8" />
+                    <div className="space-y-2">
+                      <p className="text-white/30 text-[9px] uppercase tracking-wider">Risk Indicators</p>
+                      <Indicator label="Climate trend" value="Worsening" color="text-danger-red" />
+                      <Indicator label="Portfolio concentration" value="Moderate" color="text-accent-amber" />
+                      <Indicator label="Reinsurance capacity" value="Adequate" color="text-success-green" />
+                      <Indicator label="Premium adequacy" value={lr < 1 ? "Sufficient" : "Insufficient"} color={lr < 1 ? "text-success-green" : "text-danger-red"} />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
     </main>
@@ -526,35 +428,53 @@ export default function AdminPage() {
 /*  Sub-components                                                     */
 /* ------------------------------------------------------------------ */
 
-function StatPill({
-  icon, value, label, prefix = "", amber = false, danger = false,
-}: {
-  icon: React.ReactNode; value: number; label: string; prefix?: string; amber?: boolean; danger?: boolean;
-}) {
-  const color = danger ? "text-danger-red" : amber ? "text-accent-amber" : "text-white";
+function Sep() { return <div className="w-px h-4 bg-white/10 flex-shrink-0" />; }
+
+function Stat({ icon, v, l, p="", c="text-white" }: { icon: React.ReactNode; v: number; l: string; p?: string; c?: string }) {
   return (
     <div className="flex items-center gap-1.5 whitespace-nowrap">
-      <div className="text-white/40">{icon}</div>
-      <span className={`font-mono text-sm font-bold tabular-nums ${color}`}>{prefix}{value.toLocaleString()}</span>
-      <span className="text-white/40 text-xs">{label}</span>
+      <div className="text-white/30">{icon}</div>
+      <span className={`font-mono text-sm font-bold tabular-nums ${c}`}>{p}{v.toLocaleString()}</span>
+      <span className="text-white/30 text-xs">{l}</span>
     </div>
   );
 }
 
-function RiskRow({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+function Tab({ active, onClick, icon, label, count }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; count?: number }) {
+  return (
+    <button onClick={onClick}
+      className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer outline-none ${
+        active ? "bg-white/12 text-white" : "text-white/40 hover:text-white/70 hover:bg-white/6"
+      }`}>
+      {icon} {label}
+      {count !== undefined && <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold ${active ? "bg-accent-amber text-bg-primary" : "bg-white/10 text-white/40"}`}>{count}</span>}
+    </button>
+  );
+}
+
+function Metric({ l, v, h=false }: { l: string; v: string; h?: boolean }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-white/40 text-[11px]">{label}</span>
-      <span className={`font-mono text-[11px] font-bold ${highlight ? "text-accent-amber" : "text-white"}`}>{value}</span>
+      <span className="text-white/35 text-[11px]">{l}</span>
+      <span className={`font-mono text-[11px] font-bold ${h ? "text-accent-amber" : "text-white"}`}>{v}</span>
     </div>
   );
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
+function BigMetric({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="flex items-center gap-1.5">
-      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-      <span className="text-white/40 text-[9px]">{label}</span>
+    <div className="p-3 bg-white/4 border border-white/6 rounded-xl">
+      <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1">{label}</p>
+      <p className={`font-mono text-xl font-bold ${color}`}>{value}</p>
+    </div>
+  );
+}
+
+function Indicator({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-white/35 text-[10px]">{label}</span>
+      <span className={`text-[10px] font-semibold ${color}`}>{value}</span>
     </div>
   );
 }
