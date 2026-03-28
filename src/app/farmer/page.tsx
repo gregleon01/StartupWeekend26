@@ -180,8 +180,8 @@ export default function FarmerPage() {
         </motion.div>
       </div>
 
-      {/* Vertical icon pill — right side */}
-      <div className="absolute top-1/2 -translate-y-1/2 right-4 z-40
+      {/* Vertical icon pill — left side */}
+      <div className="absolute top-1/2 -translate-y-1/2 left-4 z-40
                       flex flex-col items-center gap-1 py-3 px-2
                       bg-white/8 backdrop-blur-xl border border-white/12 rounded-3xl shadow-xl">
 
@@ -234,12 +234,12 @@ export default function FarmerPage() {
       <AnimatePresence>
         {weatherOpen && (
           <motion.div
-            className="absolute top-1/2 -translate-y-1/2 right-16 z-40 w-40
+            className="absolute top-1/2 -translate-y-1/2 left-16 z-40 w-40
                        bg-white/8 backdrop-blur-xl border border-white/12 rounded-2xl
                        overflow-hidden shadow-xl"
-            initial={{ opacity: 0, x: 8, scale: 0.96 }}
+            initial={{ opacity: 0, x: -8, scale: 0.96 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 8, scale: 0.96 }}
+            exit={{ opacity: 0, x: -8, scale: 0.96 }}
             transition={{ duration: 0.12 }}
           >
             {([
