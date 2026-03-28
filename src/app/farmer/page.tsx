@@ -162,8 +162,8 @@ export default function FarmerPage() {
         Aklima
       </Link>
 
-      {/* State label — centered chip at top */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40">
+      {/* State label — centered chip at top, hidden during onboarding */}
+      {state !== "ONBOARDING" && <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40">
         <motion.div
           key={state}
           className="px-5 py-2 bg-white/8 backdrop-blur-xl border border-white/12 rounded-full shadow-xl whitespace-nowrap"
@@ -181,7 +181,7 @@ export default function FarmerPage() {
             {state === "SIMULATION" && (locale === "bg" ? "Симулация" : "Simulation")}
           </p>
         </motion.div>
-      </div>
+      </div>}
 
       {/* Vertical icon pill — left side */}
       <div className="absolute top-1/2 -translate-y-1/2 left-4 z-40
