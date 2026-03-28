@@ -41,11 +41,15 @@ function TierCard({
   contract,
   onSimulate,
   index,
+  selected,
+  onSelect,
 }: {
   tier: Tier;
   contract: ParametricContract;
   onSimulate: () => void;
   index: number;
+  selected: boolean;
+  onSelect: () => void;
 }) {
   const { t } = useLocale();
   const payout = Math.round(contract.payoutPerHectare * tier.payoutMultiplier);
@@ -63,8 +67,9 @@ function TierCard({
 
   return (
     <motion.div
-      className={`flex-1 min-w-0 bg-white/8 backdrop-blur-xl border border-white/12 rounded-2xl p-5 transition-transform duration-150 ease-out cursor-pointer ${
-        tier.recommended ? "ring-1 ring-accent-amber" : ""
+      onClick={onSelect}
+      className={`flex-1 min-w-0 bg-white/8 backdrop-blur-xl border rounded-2xl p-5 transition-all duration-150 ease-out cursor-pointer ${
+        selected || tier.recommended ? "border-accent-amber ring-1 ring-accent-amber" : "border-white/12 hover:border-white/25"
       }`}
       style={{ transformStyle: "preserve-3d" }}
       onMouseMove={handleMouseMove}
@@ -137,15 +142,15 @@ function TierCard({
 
       {/* CTA */}
       <motion.button
-        onClick={onSimulate}
+        onClick={(e) => { e.stopPropagation(); onSimulate(); }}
         className={`w-full py-3 rounded-xl font-semibold text-sm transition-all cursor-pointer ${
-          tier.recommended
+          selected || tier.recommended
             ? "bg-accent-amber text-bg-primary hover:brightness-110"
             : "bg-white/10 text-white hover:bg-white/15"
         } active:scale-[0.98]`}
         whileTap={{ scale: 0.98 }}
       >
-        Select
+        {selected ? "Continue →" : "Select"}
       </motion.button>
     </motion.div>
   );
@@ -155,6 +160,8 @@ export default function CoverageCard({
   contract,
   onSimulate,
 }: CoverageCardProps) {
+  const [selectedTier, setSelectedTier] = React.useState<number>(1); // Default: Standard
+
   return (
     <motion.div
       className="absolute inset-0 z-30 flex items-center justify-center px-6"
@@ -174,6 +181,8 @@ export default function CoverageCard({
             contract={contract}
             onSimulate={onSimulate}
             index={i}
+            selected={selectedTier === i}
+            onSelect={() => setSelectedTier(i)}
           />
         ))}
       </div>

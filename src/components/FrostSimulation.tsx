@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, RotateCcw } from "lucide-react";
+import { X, RotateCcw, Thermometer, Clock } from "lucide-react";
 import type { ParametricContract } from "@/types";
 import { generateSimulationData } from "@/lib/frostAnalysis";
 import { useLocale } from "@/lib/i18n";
-import TemperatureGauge from "./TemperatureGauge";
 import PayoutNotification from "./PayoutNotification";
 
 interface FrostSimulationProps {
@@ -14,268 +13,192 @@ interface FrostSimulationProps {
   onExit: () => void;
 }
 
-type SimPhase = "darkening" | "coldfront" | "tempdrop" | "counting" | "payout";
-
 export default function FrostSimulation({ contract, onExit }: FrostSimulationProps) {
   const { t } = useLocale();
-  const [phase, setPhase] = useState<SimPhase>("darkening");
-  const [temperature, setTemperature] = useState(4.2); // Real start: 4.2°C at sunset
+  const [temperature, setTemperature] = useState(4.2);
   const [breachHours, setBreachHours] = useState(0);
-  const [showGauge, setShowGauge] = useState(false);
-  const [showColdFront, setShowColdFront] = useState(false);
+  const [simTime, setSimTime] = useState("");
   const [breached, setBreached] = useState(false);
   const [triggerFired, setTriggerFired] = useState(false);
   const [showPayout, setShowPayout] = useState(false);
-  const [showVignette, setShowVignette] = useState(false);
-  const [showFlash, setShowFlash] = useState(false);
   const [minTemp, setMinTemp] = useState(4.2);
-  const [simTime, setSimTime] = useState(""); // Current timestamp label
+  const [progress, setProgress] = useState(0);
 
   const simData = useRef(generateSimulationData(contract));
-  const animFrame = useRef(0);
   const timeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const schedule = useCallback((fn: () => void, ms: number) => {
     timeouts.current.push(setTimeout(fn, ms));
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      timeouts.current.forEach(clearTimeout);
-      cancelAnimationFrame(animFrame.current);
-    };
+    return () => timeouts.current.forEach(clearTimeout);
   }, []);
 
-  // Orchestrate the 5-phase sequence
+  // Run simulation — step through real Kyustendil data
   useEffect(() => {
     const data = simData.current;
     const threshold = contract.threshold;
+    const interval = 600; // ms per data point
+    let hoursBelow = 0;
+    let triggered = false;
 
-    // Phase 1: Darkening (0–1.5s) — handled by parent dimming overlay
-    setPhase("darkening");
-
-    // Phase 2: Cold front sweep (1.5–4s)
-    schedule(() => {
-      setPhase("coldfront");
-      setShowColdFront(true);
-      setShowGauge(true);
-    }, 1500);
-
-    schedule(() => {
-      setShowColdFront(false);
-    }, 4000);
-
-    // Phase 3: Temperature drop (4–12s)
-    // Step through all 19 real data points from the Kyustendil 2025 event
-    // Apr 7 18:00 (4.2°C) → Apr 8 06:00 (-3.1°C) → Apr 8 12:00 (6.2°C)
-    schedule(() => {
-      setPhase("tempdrop");
-      const interval = 8000 / data.length; // ~420ms per hour
-      let idx = 0;
-      let hoursBelow = 0;
-      let triggered = false;
-
-      const stepTemp = () => {
-        if (idx >= data.length) return;
-        const point = data[idx];
+    data.forEach((point, idx) => {
+      schedule(() => {
         const temp = point.temperature;
-
-        // Format time label: "Apr 7, 22:00" from "2025-04-07T22:00"
         const d = new Date(point.time);
         const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
-          ", " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+          " " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+
         setSimTime(label);
         setTemperature(temp);
         setMinTemp((prev) => Math.min(prev, temp));
+        setProgress((idx + 1) / data.length);
 
-        // Track threshold crossing
         if (temp < threshold) {
-          if (!breached) {
-            setBreached(true);
-            setShowVignette(true);
-            setTimeout(() => setShowVignette(false), 500);
-          }
+          if (!breached) setBreached(true);
           hoursBelow++;
           setBreachHours(hoursBelow);
-
-          // Check trigger
           if (hoursBelow >= contract.durationThreshold && !triggered) {
             triggered = true;
             setTriggerFired(true);
-            setPhase("counting");
-            setShowFlash(true);
-            setTimeout(() => setShowFlash(false), 100);
           }
         }
 
-        idx++;
-        if (idx < data.length) {
-          timeouts.current.push(setTimeout(stepTemp, interval));
-        } else {
-          // All points done → show payout
-          timeouts.current.push(setTimeout(() => {
-            setPhase("payout");
-            setShowGauge(false);
-            setShowPayout(true);
-          }, 1500));
+        // Last point → show payout
+        if (idx === data.length - 1) {
+          schedule(() => setShowPayout(true), 1200);
         }
-      };
-
-      stepTemp();
-    }, 4000);
-
+      }, 1500 + idx * interval); // Start after 1.5s
+    });
   }, [contract, schedule, breached]);
+
+  const tempColor = breached
+    ? triggerFired ? "text-danger-red" : "text-frost-blue"
+    : "text-white";
 
   return (
     <div className="absolute inset-0 z-40 pointer-events-none">
+      {/* Full-screen dim */}
+      <motion.div
+        className="absolute inset-0 bg-black/70"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1 }}
+      />
 
-      {/* Exit button — always visible */}
+      {/* Exit button */}
       <button
         onClick={onExit}
-        className="absolute top-4 left-4 z-50 flex items-center gap-1.5 px-3 py-1.5
-                   bg-bg-secondary/80 backdrop-blur-md border border-border-subtle
-                   rounded-lg text-white/70 text-xs hover:text-white
-                   hover:bg-bg-secondary transition-all cursor-pointer pointer-events-auto"
+        className="absolute top-4 left-4 z-50 flex items-center gap-1.5 px-4 py-2
+                   bg-white/8 backdrop-blur-xl border border-white/12 rounded-full
+                   text-white/60 text-xs hover:text-white hover:bg-white/14
+                   transition-all cursor-pointer pointer-events-auto shadow-xl"
       >
         <X className="w-3 h-3" />
         {t("sim.exit")}
       </button>
 
-      {/* Context label — visible during early phases */}
+      {/* Title chip */}
+      <motion.div
+        className="absolute top-4 left-1/2 -translate-x-1/2 z-50"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <div className="px-5 py-2 bg-white/8 backdrop-blur-xl border border-white/12 rounded-full shadow-xl">
+          <p className="text-white text-sm font-medium">
+            {t("sim.title")} · Kyustendil, April 2025
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Live monitoring card — centered */}
       <AnimatePresence>
-        {(phase === "darkening" || phase === "coldfront") && (
+        {!showPayout && (
           <motion.div
-            className="absolute top-4 left-1/2 -translate-x-1/2 z-50"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
+            className="absolute inset-0 flex items-center justify-center px-6 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
           >
-            <div className="px-3 py-1.5 bg-bg-secondary/80 backdrop-blur-md border border-border-subtle rounded-lg">
-              <p className="text-white/50 text-xs uppercase tracking-widest">
-                {t("sim.title")}
-              </p>
+            <div className="w-full max-w-[420px] bg-white/8 backdrop-blur-2xl border border-white/12 rounded-3xl p-6 shadow-2xl">
+              {/* Progress bar */}
+              <div className="h-1 bg-white/6 rounded-full mb-5 overflow-hidden">
+                <motion.div
+                  className={`h-full rounded-full ${triggerFired ? "bg-danger-red" : "bg-accent-amber"}`}
+                  animate={{ width: `${progress * 100}%` }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+
+              {/* Time label */}
+              <p className="text-white/40 text-xs font-mono text-center mb-6">{simTime || "Starting..."}</p>
+
+              {/* Temperature — big centered number */}
+              <div className="text-center mb-6">
+                <p className="text-white/40 text-[10px] uppercase tracking-widest mb-2">
+                  Current Temperature
+                </p>
+                <motion.p
+                  className={`font-mono text-6xl font-bold tabular-nums leading-none ${tempColor}`}
+                  key={temperature}
+                  initial={{ scale: 1.05 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  {temperature.toFixed(1)}°C
+                </motion.p>
+              </div>
+
+              {/* Stats row */}
+              <div className="flex items-center justify-center gap-6 mb-4">
+                <div className="flex items-center gap-2">
+                  <Thermometer className="w-3.5 h-3.5 text-white/30" />
+                  <div>
+                    <p className="text-white/30 text-[9px] uppercase">Threshold</p>
+                    <p className="font-mono text-white/70 text-sm">{contract.threshold}°C</p>
+                  </div>
+                </div>
+                <div className="w-px h-8 bg-white/10" />
+                <div className="flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-white/30" />
+                  <div>
+                    <p className="text-white/30 text-[9px] uppercase">Hours below</p>
+                    <p className={`font-mono text-sm font-bold ${triggerFired ? "text-accent-amber" : "text-white/70"}`}>
+                      {breachHours}h / {contract.durationThreshold}h
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Trigger status */}
+              <div className="text-center">
+                {triggerFired ? (
+                  <motion.p
+                    className="text-accent-amber text-xs font-semibold uppercase tracking-wider"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                  >
+                    ⚡ Trigger Activated — Payout Processing
+                  </motion.p>
+                ) : breached ? (
+                  <p className="text-frost-blue text-xs uppercase tracking-wider">
+                    Monitoring frost event...
+                  </p>
+                ) : (
+                  <p className="text-white/30 text-xs uppercase tracking-wider">
+                    Monitoring conditions
+                  </p>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Full-screen dim */}
-      <motion.div
-        className="absolute inset-0"
-        initial={{ backgroundColor: "rgba(0,0,0,0)" }}
-        animate={{ backgroundColor: "rgba(0,0,0,0.6)" }}
-        transition={{ duration: 1.5 }}
-      />
-
-      {/* Cold blue gradient creeping from edges */}
-      <motion.div
-        className="absolute inset-0"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: phase !== "darkening" ? 1 : 0 }}
-        transition={{ duration: 2 }}
-        style={{
-          background:
-            "radial-gradient(ellipse at center, transparent 40%, #0288D140 100%)",
-        }}
-      />
-
-      {/* Cold front sweep */}
-      <AnimatePresence>
-        {showColdFront && (
-          <motion.div
-            className="absolute inset-0"
-            initial={{ x: "-100%" }}
-            animate={{ x: "100%" }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 2.5, ease: "easeInOut" }}
-            style={{
-              background:
-                "linear-gradient(90deg, transparent 0%, #4FC3F722 30%, #4FC3F744 50%, #4FC3F722 70%, transparent 100%)",
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Red vignette flash on threshold crossing */}
-      <AnimatePresence>
-        {showVignette && (
-          <motion.div
-            className="absolute inset-0"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.6 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            style={{
-              boxShadow: "inset 0 0 100px var(--color-danger-red-glow)",
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* White flash on trigger */}
-      {showFlash && (
-        <div className="absolute inset-0 bg-white/10" />
-      )}
-
-      {/* Trigger pulse from map center */}
-      <AnimatePresence>
-        {triggerFired && !showPayout && (
-          <motion.div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-accent-amber"
-            initial={{ width: 0, height: 0, opacity: 1 }}
-            animate={{ width: 400, height: 400, opacity: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Temperature gauge */}
-      <TemperatureGauge
-        temperature={temperature}
-        threshold={contract.threshold}
-        visible={showGauge}
-        breached={breached}
-      />
-
-      {/* Duration counter */}
-      <AnimatePresence>
-        {(phase === "counting" || phase === "tempdrop") && !showPayout && (
-          <motion.div
-            className="absolute right-6 top-[calc(50%+180px)] z-40 text-right"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-          >
-            {simTime && (
-              <p className="text-frost-blue text-xs font-mono mb-2">{simTime}</p>
-            )}
-            <p className="text-white/50 text-xs uppercase tracking-wider mb-1">
-              {t("sim.hoursBelow")} {contract.threshold}°C
-            </p>
-            <p className="font-mono text-3xl font-bold tabular-nums">
-              <span className={triggerFired ? "text-accent-amber" : "text-white"}>
-                {breachHours}h
-              </span>
-              <span className="text-white/50 text-lg">
-                {" "}
-                / {contract.durationThreshold}h
-              </span>
-            </p>
-            {triggerFired && (
-              <motion.p
-                className="text-accent-amber text-sm font-semibold uppercase tracking-wider mt-1"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                {t("sim.triggered")}
-              </motion.p>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Payout card */}
+      {/* Payout receipt */}
       <AnimatePresence>
         {showPayout && (
           <PayoutNotification
@@ -286,7 +209,7 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
         )}
       </AnimatePresence>
 
-      {/* Restart CTA — appears after simulation completes */}
+      {/* Restart CTA */}
       <AnimatePresence>
         {showPayout && (
           <motion.div
@@ -297,16 +220,16 @@ export default function FrostSimulation({ contract, onExit }: FrostSimulationPro
           >
             <button
               onClick={onExit}
-              className="flex items-center gap-2 px-5 py-2.5 bg-bg-secondary/90 backdrop-blur-md
-                         border border-border-subtle rounded-xl text-white/70 text-sm
-                         hover:text-white hover:bg-bg-secondary transition-all cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2.5 bg-white/8 backdrop-blur-xl
+                         border border-white/12 rounded-full text-white/70 text-sm
+                         hover:text-white hover:bg-white/14 transition-all cursor-pointer shadow-xl"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               {t("sim.restart")}
             </button>
             <button
-              className="px-5 py-2.5 bg-accent-amber text-bg-primary rounded-xl text-sm
-                         font-semibold hover:brightness-110 transition-all cursor-pointer"
+              className="px-5 py-2.5 bg-accent-amber text-bg-primary rounded-full text-sm
+                         font-semibold hover:brightness-110 transition-all cursor-pointer shadow-xl"
             >
               {t("sim.insure")}
             </button>
