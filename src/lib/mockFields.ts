@@ -1,4 +1,5 @@
 import type { MockField, CropKey } from "@/types";
+import { assignStationZone } from "./basisRisk";
 
 // Seeded pseudo-random for deterministic demo data
 function seededRandom(seed: number) {
@@ -51,6 +52,7 @@ export function generateMockFields(): MockField[] {
       riskScore: +riskScore,
       payoutTriggered: covered && payoutTriggered,
       payoutAmount: payoutTriggered ? payoutAmounts[crop] : 0,
+      stationZone: assignStationZone(lat, lng),
     });
   }
 
