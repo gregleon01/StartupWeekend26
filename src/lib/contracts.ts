@@ -106,6 +106,16 @@ export const COUNTRY_BOUNDS: Record<
 
 /** Validate that coordinates fall within a supported country */
 export function validateCoordinates(lat: number, lng: number): string | null {
+  if (
+    typeof lat !== "number" ||
+    typeof lng !== "number" ||
+    !isFinite(lat) ||
+    !isFinite(lng) ||
+    lat < -90 || lat > 90 ||
+    lng < -180 || lng > 180
+  ) {
+    return null;
+  }
   for (const [code, b] of Object.entries(COUNTRY_BOUNDS)) {
     if (lat >= b.minLat && lat <= b.maxLat && lng >= b.minLng && lng <= b.maxLng) {
       return code;
