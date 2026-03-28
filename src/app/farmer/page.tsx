@@ -138,12 +138,12 @@ export default function FarmerPage() {
       />
 
       {/* Unified top bar pill — two rows */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 w-[480px]
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 w-[580px]
                       bg-white/8 backdrop-blur-xl border border-white/12 rounded-full
                       overflow-hidden shadow-xl">
 
         {/* Row 1: context label */}
-        <div className="px-8 pt-3 pb-2 text-center">
+        <div className="px-8 pt-2 pb-1.5 text-center">
           <motion.p
             key={state}
             className="text-white text-sm font-medium tracking-wide"
@@ -169,7 +169,7 @@ export default function FarmerPage() {
           <div className="flex items-center">
             <Link
               href="/"
-              className="flex items-center gap-1.5 px-5 py-2.5 text-white/60 text-xs
+              className="flex items-center gap-1.5 px-5 py-2 text-white/60 text-xs
                          hover:text-white hover:bg-white/8 rounded-l-full transition-all whitespace-nowrap outline-none"
             >
               <ArrowLeft className="w-3 h-3" />
@@ -178,7 +178,7 @@ export default function FarmerPage() {
             {showBack && (
               <motion.button
                 onClick={handleBack}
-                className="flex items-center gap-1 px-3 py-2.5 text-white/50 text-xs
+                className="flex items-center gap-1 px-3 py-2 text-white/50 text-xs
                            hover:text-white hover:bg-white/8 transition-all cursor-pointer outline-none whitespace-nowrap"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -193,7 +193,7 @@ export default function FarmerPage() {
           <div className="flex justify-center">
             <button
               onClick={() => setWeatherOpen((o) => !o)}
-              className="flex items-center gap-1.5 px-4 py-2.5 text-white/70 text-xs
+              className="flex items-center gap-1.5 px-4 py-2 text-white/70 text-xs
                          hover:text-white hover:bg-white/8 rounded-full transition-all cursor-pointer outline-none"
             >
               {weatherMode === "none" && <Layers className="w-3.5 h-3.5" />}
@@ -207,7 +207,7 @@ export default function FarmerPage() {
 
           {/* Right — Language */}
           <div className="flex justify-end">
-            <div className="px-5 py-2.5 rounded-r-full hover:bg-white/8 transition-all">
+            <div className="px-5 py-2 rounded-r-full hover:bg-white/8 transition-all">
               <LanguageToggle />
             </div>
           </div>
@@ -218,7 +218,7 @@ export default function FarmerPage() {
       <AnimatePresence>
         {weatherOpen && (
           <motion.div
-            className="absolute top-[106px] left-1/2 -translate-x-1/2 z-40 w-44
+            className="absolute top-[96px] left-1/2 -translate-x-1/2 z-40 w-44
                        bg-white/8 backdrop-blur-xl border border-white/12 rounded-2xl
                        overflow-hidden shadow-xl"
             initial={{ opacity: 0, y: -6, scale: 0.96 }}
