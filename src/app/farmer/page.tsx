@@ -123,7 +123,7 @@ export default function FarmerPage() {
   }, [state, parcels.length]);
 
   const drawingEnabled = state === "DRAWING";
-  const showBack = state === "ASSIGN_CROP" || state === "HISTORY" || state === "COVERAGE";
+  const showBack = state === "ASSIGN_CROP" || state === "PARCELS" || state === "HISTORY" || state === "COVERAGE";
   const mapDimmed = state === "ASSIGN_CROP" || state === "COVERAGE";
 
   return (
@@ -165,29 +165,32 @@ export default function FarmerPage() {
 
         {/* Row 2: actions */}
         <div className="flex items-center justify-center gap-1 px-2 pb-1">
-          {/* Aklima */}
+          {/* Aklima home */}
           <Link
             href="/"
-            className="flex items-center gap-1.5 px-4 py-1.5 text-white/60 text-xs
+            className="flex items-center px-4 py-1.5 text-white/50 text-xs
                        hover:text-white hover:bg-white/10 rounded-full transition-all whitespace-nowrap outline-none"
           >
-            <ArrowLeft className="w-3 h-3" />
             Aklima
           </Link>
 
-          {/* Back */}
-          {showBack && (
-            <motion.button
-              onClick={handleBack}
-              className="flex items-center gap-1 px-4 py-1.5 text-white/50 text-xs
-                         hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer outline-none whitespace-nowrap"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              <ArrowLeft className="w-3 h-3" />
-              {locale === "bg" ? "Назад" : "Back"}
-            </motion.button>
-          )}
+          {/* Back — in-flow navigation */}
+          <AnimatePresence>
+            {showBack && (
+              <motion.button
+                onClick={handleBack}
+                className="flex items-center gap-1 px-4 py-1.5 text-white/70 text-xs font-medium
+                           hover:text-white hover:bg-white/10 rounded-full transition-all cursor-pointer outline-none whitespace-nowrap"
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -6 }}
+                transition={{ duration: 0.15 }}
+              >
+                <ArrowLeft className="w-3 h-3" />
+                {locale === "bg" ? "Назад" : "Back"}
+              </motion.button>
+            )}
+          </AnimatePresence>
 
           {/* Divider */}
           <div className="w-px h-3.5 bg-white/12 mx-1" />
