@@ -2,7 +2,7 @@
 
 import { useMemo, useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Shield, TrendingUp, MapPin, AlertTriangle, Banknote, BarChart3, Radio, Home } from "lucide-react";
+import { Shield, TrendingUp, MapPin, AlertTriangle, Banknote, BarChart3, Radio, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { generateMockFields, computeFieldStats } from "@/lib/mockFields";
 import { computePortfolioRisk } from "@/lib/statistics";
@@ -36,20 +36,14 @@ function useCountUp(target: number, duration: number = 1200, delay: number = 0) 
   return value;
 }
 
-const ACTIVITY_TIMES = ["2h ago", "2h ago", "3h ago", "3h ago", "4h ago", "4h ago", "5h ago", "5h ago"];
+const ACTIVITY_TIMES = ["2h ago", "2h ago", "3h ago", "3h ago", "4h ago", "4h ago"];
 
 export default function AdminPage() {
   const { triggerRates, loading: weatherLoading, isLiveData } = usePortfolioWeather();
 
-  const fields = useMemo(
-    () => generateMockFields(triggerRates),
-    [triggerRates],
-  );
+  const fields = useMemo(() => generateMockFields(triggerRates), [triggerRates]);
   const stats = useMemo(() => computeFieldStats(fields), [fields]);
-  const portfolio = useMemo(
-    () => computePortfolioRisk(fields, triggerRates),
-    [fields, triggerRates],
-  );
+  const portfolio = useMemo(() => computePortfolioRisk(fields, triggerRates), [fields, triggerRates]);
 
   const recentActivity = useMemo(
     () =>
@@ -73,59 +67,64 @@ export default function AdminPage() {
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-bg-primary">
-      {/* Map */}
+      {/* Map — full bleed */}
       <InsuredFieldsMap fields={fields} />
 
-      {/* Header bar */}
-      <div className="absolute top-0 inset-x-0 z-20 bg-bg-primary/80 backdrop-blur-xl border-b border-border-subtle">
-        <div className="px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <Shield className="w-5 h-5 text-accent-amber" />
-              <span className="text-white font-medium text-sm">Aklima</span>
-            </Link>
-            <span className="text-white/50 text-xs">
-              Insurer Dashboard
-            </span>
-            <span className="text-white/50 text-xs">&middot;</span>
-            <span className="text-white/70 text-xs">
-              Kyustendil Region
-            </span>
-            <span className="text-white/50 text-xs">&middot;</span>
-            {weatherLoading ? (
-              <span className="text-white/50 text-xs animate-pulse">
-                Loading historical data…
-              </span>
-            ) : (
-              <span className={`flex items-center gap-1 text-xs ${isLiveData ? "text-success-green" : "text-white/50"}`}>
-                <Radio className="w-3 h-3" />
-                {isLiveData ? "Live historical data · Open-Meteo 2015–2025" : "Fallback rates"}
-              </span>
-            )}
-          </div>
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-tertiary/60 border border-border-subtle
-                       rounded-lg text-white/70 text-xs hover:text-white transition-all"
-          >
-            <Home className="w-3 h-3" />
-            Home
-          </Link>
-        </div>
+      {/* Aklima home — top left pill */}
+      <Link
+        href="/"
+        className="absolute top-4 left-4 z-40 flex items-center gap-1.5 px-4 py-2
+                   bg-white/8 backdrop-blur-xl border border-white/12 rounded-full
+                   text-white/60 text-xs hover:text-white hover:bg-white/14 transition-all shadow-xl outline-none"
+      >
+        <ArrowLeft className="w-3 h-3" />
+        Aklima
+      </Link>
 
-        {/* Stats row */}
-        <div className="px-6 pb-3 flex items-center gap-6 overflow-x-auto">
-          <StatPill icon={<MapPin className="w-3.5 h-3.5" />} value={animFields} label="Fields Insured" />
-          <StatPill icon={<TrendingUp className="w-3.5 h-3.5" />} value={animHa} label="ha Covered" />
-          <StatPill icon={<Banknote className="w-3.5 h-3.5" />} value={animPremiums} label="Premiums Collected" prefix="€" amber />
-          <StatPill icon={<AlertTriangle className="w-3.5 h-3.5" />} value={animTriggered} label="Payouts Triggered" danger />
+      {/* Title chip — centered */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40">
+        <div className="flex items-center gap-3 px-5 py-2 bg-white/8 backdrop-blur-xl border border-white/12 rounded-full shadow-xl">
+          <Shield className="w-4 h-4 text-accent-amber" />
+          <span className="text-white text-sm font-medium">Insurer Dashboard</span>
+          <span className="text-white/30">·</span>
+          <span className="text-white/60 text-xs">Kyustendil Region</span>
+          <span className="text-white/30">·</span>
+          {weatherLoading ? (
+            <span className="text-white/40 text-xs animate-pulse">Loading…</span>
+          ) : (
+            <span className={`flex items-center gap-1 text-xs ${isLiveData ? "text-success-green" : "text-white/40"}`}>
+              <Radio className="w-3 h-3" />
+              {isLiveData ? "Live data" : "Fallback"}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Stats row — floating pill at top */}
+      <div className="absolute top-16 left-1/2 -translate-x-1/2 z-40">
+        <div className="flex items-center gap-5 px-6 py-2.5 bg-white/8 backdrop-blur-xl border border-white/12 rounded-full shadow-xl">
+          <StatPill icon={<MapPin className="w-3.5 h-3.5" />} value={animFields} label="Fields" />
+          <div className="w-px h-4 bg-white/12" />
+          <StatPill icon={<TrendingUp className="w-3.5 h-3.5" />} value={animHa} label="ha" />
+          <div className="w-px h-4 bg-white/12" />
+          <StatPill icon={<Banknote className="w-3.5 h-3.5" />} value={animPremiums} label="Premiums" prefix="€" amber />
+          <div className="w-px h-4 bg-white/12" />
+          <StatPill icon={<AlertTriangle className="w-3.5 h-3.5" />} value={animTriggered} label="Triggered" danger />
+          <div className="w-px h-4 bg-white/12" />
           <StatPill icon={<Banknote className="w-3.5 h-3.5" />} value={animPaid} label="Paid Out" prefix="€" danger />
         </div>
       </div>
 
-      {/* Right sidebar — analytics */}
-      <div className="absolute top-[100px] right-0 bottom-0 w-[340px] z-20 bg-bg-secondary/85 backdrop-blur-xl border-l border-border-subtle overflow-y-auto">
-        <div className="px-5 py-4 space-y-6">
+      {/* Right sidebar — floating glass panel */}
+      <motion.div
+        className="absolute top-4 right-4 bottom-4 w-[320px] z-20
+                   bg-white/8 backdrop-blur-xl border border-white/12 rounded-2xl
+                   overflow-hidden shadow-xl flex flex-col"
+        initial={{ x: 340, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ type: "spring", damping: 25, delay: 0.2 }}
+      >
+        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
 
           {/* Loss Ratio Gauge */}
           <LossRatioGauge
@@ -148,13 +147,16 @@ export default function AdminPage() {
               </p>
             </div>
             <RiskMetric label="Total Exposure" value={`€${portfolio.totalExposure.toLocaleString()}`} />
-            <RiskMetric label="Expected Annual Payout" value={`€${portfolio.expectedAnnualPayout.toLocaleString()}`} />
+            <RiskMetric label="Expected Annual" value={`€${portfolio.expectedAnnualPayout.toLocaleString()}`} />
             <RiskMetric label="VaR 95%" value={`€${portfolio.valueAtRisk95.toLocaleString()}`} highlight />
-            <RiskMetric label="Correlation Zones" value={String(portfolio.correlationZones)} />
+            <RiskMetric label="Zones" value={String(portfolio.correlationZones)} />
             <RiskMetric label="Diversification" value={`${Math.round(portfolio.diversificationBenefit * 100)}%`} />
           </div>
 
-          {/* Recent Activity */}
+          {/* Divider */}
+          <div className="h-px bg-white/8" />
+
+          {/* Recent Payouts */}
           <div className="space-y-2">
             <p className="text-white/50 text-xs uppercase tracking-widest">
               Recent Payouts
@@ -162,21 +164,21 @@ export default function AdminPage() {
             {recentActivity.map((item, i) => (
               <motion.div
                 key={i}
-                className="flex items-center justify-between p-2.5 bg-bg-tertiary/50 rounded-lg"
+                className="flex items-center justify-between p-2.5 bg-white/6 border border-white/8 rounded-xl"
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + i * 0.08, duration: 0.4 }}
+                transition={{ delay: 0.4 + i * 0.08, duration: 0.4 }}
               >
                 <div className="flex items-center gap-2">
                   <span className="text-base">{contracts[item.crop]?.icon}</span>
                   <div>
                     <p className="text-white text-[11px] font-medium">Field #{item.fieldId}</p>
-                    <p className="text-white/50 text-[10px]">{contracts[item.crop]?.crop}</p>
+                    <p className="text-white/40 text-[10px]">{contracts[item.crop]?.crop}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="font-mono text-danger-red text-xs font-bold">€{item.amount}</p>
-                  <p className="text-white/50 text-[9px]">{item.time}</p>
+                  <p className="text-white/30 text-[9px]">{item.time}</p>
                 </div>
               </motion.div>
             ))}
@@ -191,7 +193,7 @@ export default function AdminPage() {
             <LegendItem color="#555555" label="Not yet covered" />
           </div>
         </div>
-      </div>
+      </motion.div>
     </main>
   );
 }
@@ -203,10 +205,10 @@ function StatPill({
 }) {
   const color = danger ? "text-danger-red" : amber ? "text-accent-amber" : "text-white";
   return (
-    <div className="flex items-center gap-2 whitespace-nowrap">
-      <div className="text-white/50">{icon}</div>
+    <div className="flex items-center gap-1.5 whitespace-nowrap">
+      <div className="text-white/40">{icon}</div>
       <span className={`font-mono text-sm font-bold tabular-nums ${color}`}>{prefix}{value.toLocaleString()}</span>
-      <span className="text-white/50 text-xs">{label}</span>
+      <span className="text-white/40 text-xs">{label}</span>
     </div>
   );
 }
@@ -224,7 +226,7 @@ function LegendItem({ color, label }: { color: string; label: string }) {
   return (
     <div className="flex items-center gap-2">
       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-      <span className="text-white/70 text-xs">{label}</span>
+      <span className="text-white/60 text-xs">{label}</span>
     </div>
   );
 }
