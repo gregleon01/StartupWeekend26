@@ -15,7 +15,7 @@ const OPEN_METEO_ARCHIVE = "https://archive-api.open-meteo.com/v1/archive";
 /*  6. Graceful fallback to pre-cached mock data if API fails         */
 /* ================================================================== */
 
-const CACHE_PREFIX = "niva_weather_";
+const CACHE_PREFIX = "aklima_weather_";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /** Rounds coordinates to 3 decimal places (~110m) for cache keying */

@@ -360,7 +360,7 @@ export default function FrostSimulation({
       {/* Exit button */}
       <button
         onClick={onExit}
-        className="absolute top-4 left-4 z-50 flex items-center gap-1.5 px-4 py-2
+        className="absolute top-4 left-4 z-[60] flex items-center gap-1.5 px-4 py-2
                    bg-white/8 backdrop-blur-xl border border-white/12 rounded-full
                    text-white/60 text-xs hover:text-white hover:bg-white/14
                    transition-all cursor-pointer pointer-events-auto"
