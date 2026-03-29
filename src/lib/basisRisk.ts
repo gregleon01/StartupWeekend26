@@ -114,6 +114,67 @@ export function calculateBasisRiskConfidence(
 }
 
 /**
+ * Pearson correlation coefficient between two paired numeric arrays.
+ * Returns a value in [-1, 1]. Used to measure how closely a field's
+ * ERA5 temperature series tracks the nearest station's ERA5 series.
+ *
+ * r = Σ((a - ā)(b - b̄)) / √(Σ(a - ā)² × Σ(b - b̄)²)
+ */
+export function pearsonCorrelation(a: number[], b: number[]): number {
+  const n = Math.min(a.length, b.length);
+  if (n < 10) return 0;
+
+  const meanA = a.slice(0, n).reduce((s, v) => s + v, 0) / n;
+  const meanB = b.slice(0, n).reduce((s, v) => s + v, 0) / n;
+
+  let num = 0, varA = 0, varB = 0;
+  for (let i = 0; i < n; i++) {
+    const da = a[i] - meanA;
+    const db = b[i] - meanB;
+    num += da * db;
+    varA += da * da;
+    varB += db * db;
+  }
+
+  const denom = Math.sqrt(varA * varB);
+  if (denom === 0) return 0;
+  return Math.max(0, Math.min(1, num / denom));
+}
+
+/**
+ * Compute ERA5-based basis risk confidence from two aligned temperature maps.
+ *
+ * Two-component score:
+ *   1. Pearson r between field and station ERA5 spring temperatures
+ *      (captures climate divergence across different grid cells)
+ *   2. Distance discount of 1% per km
+ *      (differentiates farms within the same ~25km ERA5 grid cell,
+ *       where Pearson r is always ~0.99 but microclimate risk still grows)
+ *
+ * Result: pearsonR − (distanceKm / 100), clamped to [0, 1]
+ */
+export function computeCorrelationConfidence(
+  fieldTemps: Map<string, number>,
+  stationTemps: Map<string, number>,
+  distanceKm: number,
+): number {
+  const fieldArr: number[] = [];
+  const stationArr: number[] = [];
+
+  for (const [ts, fieldTemp] of fieldTemps) {
+    const stationTemp = stationTemps.get(ts);
+    if (stationTemp !== undefined) {
+      fieldArr.push(fieldTemp);
+      stationArr.push(stationTemp);
+    }
+  }
+
+  const r = fieldArr.length >= 10 ? pearsonCorrelation(fieldArr, stationArr) : 0.75;
+  const distanceDiscount = distanceKm / 100;
+  return +Math.max(0, Math.min(1, r - distanceDiscount)).toFixed(2);
+}
+
+/**
  * Assign each field to a weather station zone for correlation analysis.
  * Fields in the same zone share the same trigger — if one triggers,
  * all in the zone likely trigger. This is correlated risk.

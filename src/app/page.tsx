@@ -102,7 +102,7 @@ export default function LandingPage() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
       >
-        HackAUBG 8.0 · The Hub Sofia
+        HackAUBG 8.0 · The Hub Blagoevgrad
       </motion.p>
     </main>
   );

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import type { CropKey, FarmerParcel, ParametricContract, FieldEnrichment } from "@/types";
+import type { CropKey, FarmerParcel, ParametricContract, FieldEnrichment, PolicySelection } from "@/types";
 import { contracts } from "@/lib/contracts";
 import { useWeatherData } from "@/hooks/useWeatherData";
 import { enrichField } from "@/lib/geoEnrich";
@@ -21,6 +21,7 @@ import ParcelSidebar from "@/components/ParcelSidebar";
 import FieldInfoBar from "@/components/FieldInfoBar";
 import HistoricalTimeline from "@/components/HistoricalTimeline";
 import CoverageCard from "@/components/CoverageCard";
+import PolicyConfirmation from "@/components/PolicyConfirmation";
 import FrostSimulation from "@/components/FrostSimulation";
 
 type FarmerState =
@@ -30,6 +31,8 @@ type FarmerState =
   | "PARCELS"        // Viewing all parcels, can add more
   | "HISTORY"        // Viewing frost history for selected parcel
   | "COVERAGE"       // Coverage offer
+  | "NO_COVERAGE"    // Farmer skipped all crops
+  | "CONFIRMATION"   // Policy summary before activation
   | "SIMULATION";    // Frost simulation
 
 export default function FarmerPage() {
@@ -46,6 +49,7 @@ export default function FarmerPage() {
 
   const [flyToCoords, setFlyToCoords] = useState<[number, number] | null>(null);
   const [selectedParcelIndex, setSelectedParcelIndex] = useState(0);
+  const [policySelections, setPolicySelections] = useState<PolicySelection[]>([]);
 
   const weather = useWeatherData();
   const [weatherMode, setWeatherMode] = useState<OverlayMode>("none");
@@ -111,9 +115,13 @@ export default function FarmerPage() {
     setContract(c);
     setState("HISTORY");
 
-    // Enrich and fetch weather for this parcel's centroid
+    // Enrich and fetch portfolio weather from the most-valuable parcel's centroid
     enrichField(mostValuable.centroid).then(setEnrichment);
-    weather.fetchAndAnalyze(mostValuable.centroid.lat, mostValuable.centroid.lng, c);
+    weather.fetchAndAnalyzePortfolio(
+      mostValuable.centroid.lat,
+      mostValuable.centroid.lng,
+      parcels,
+    );
   }, [parcels, weather]);
 
   // Navigate between parcels in the info bar
@@ -143,13 +151,59 @@ export default function FarmerPage() {
   }, []);
 
   const handleSeeCoverage = useCallback(() => setState("COVERAGE"), []);
+  const handleCoverageComplete = useCallback((selections: PolicySelection[]) => {
+    setPolicySelections(selections);
+    const allSkipped = selections.every((s) => s.tierIndex === -1);
+    setState(allSkipped ? "NO_COVERAGE" : "CONFIRMATION");
+  }, []);
   const handleSimulate = useCallback(() => setState("SIMULATION"), []);
+
+  // Build a location label from enrichment + parcel count
+  const locationLabel = useMemo(() => {
+    const primary = enrichment?.municipality && enrichment.municipality !== "Unknown"
+      ? enrichment.municipality
+      : null;
+    if (!primary) return "Your Portfolio";
+    if (parcels.length <= 1) return primary;
+    // Try to find a second distinct municipality from the parcel list
+    // using the offline fallback lookup embedded in geoEnrich
+    const KNOWN: { lat: number; lng: number; name: string; radius: number }[] = [
+      { lat: 42.283, lng: 22.694, name: "Kyustendil", radius: 0.3 },
+      { lat: 42.698, lng: 23.322, name: "Sofia", radius: 0.4 },
+      { lat: 42.150, lng: 24.750, name: "Plovdiv", radius: 0.4 },
+      { lat: 41.567, lng: 23.283, name: "Sandanski", radius: 0.3 },
+      { lat: 42.017, lng: 23.100, name: "Blagoevgrad", radius: 0.3 },
+      { lat: 42.267, lng: 23.117, name: "Dupnitsa", radius: 0.2 },
+      { lat: 43.417, lng: 23.217, name: "Montana", radius: 0.3 },
+      { lat: 43.417, lng: 24.617, name: "Pleven", radius: 0.3 },
+      { lat: 43.083, lng: 25.633, name: "Veliko Tarnovo", radius: 0.3 },
+      { lat: 43.850, lng: 25.950, name: "Ruse", radius: 0.3 },
+      { lat: 43.217, lng: 27.917, name: "Varna", radius: 0.4 },
+      { lat: 42.500, lng: 27.467, name: "Burgas", radius: 0.4 },
+      { lat: 42.433, lng: 25.617, name: "Stara Zagora", radius: 0.3 },
+      { lat: 42.200, lng: 24.333, name: "Pazardzhik", radius: 0.3 },
+    ];
+    const names = new Set<string>([primary]);
+    for (const p of parcels) {
+      let best = null as string | null, minD = Infinity;
+      for (const m of KNOWN) {
+        const d = Math.sqrt((p.centroid.lat - m.lat) ** 2 + (p.centroid.lng - m.lng) ** 2);
+        if (d < m.radius && d < minD) { minD = d; best = m.name; }
+      }
+      if (best) names.add(best);
+    }
+    const arr = [...names];
+    if (arr.length === 1) return arr[0];
+    if (arr.length === 2) return `${arr[0]} & ${arr[1]}`;
+    return "Your Portfolio";
+  }, [enrichment, parcels]);
 
   const handleRestart = useCallback(() => {
     setParcels([]);
     setActiveParcel(null);
     setContract(null);
     setEnrichment(null);
+    setPolicySelections([]);
     setState("ONBOARDING");
   }, []);
 
@@ -167,12 +221,16 @@ export default function FarmerPage() {
       setState("PARCELS");
     } else if (state === "COVERAGE") {
       setState("HISTORY");
+    } else if (state === "CONFIRMATION") {
+      setState("COVERAGE");
+    } else if (state === "NO_COVERAGE") {
+      setState("COVERAGE");
     }
   }, [state, parcels.length]);
 
   const drawingEnabled = state === "DRAWING" || state === "PARCELS";
-  const showBack = state === "DRAWING" || state === "ASSIGN_CROP" || state === "PARCELS" || state === "HISTORY" || state === "COVERAGE";
-  const mapDimmed = state === "ASSIGN_CROP" || state === "COVERAGE";
+  const showBack = state === "DRAWING" || state === "ASSIGN_CROP" || state === "PARCELS" || state === "HISTORY" || state === "COVERAGE" || state === "CONFIRMATION" || state === "NO_COVERAGE";
+  const mapDimmed = state === "ASSIGN_CROP" || state === "COVERAGE" || state === "CONFIRMATION" || state === "NO_COVERAGE";
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-bg-primary">
@@ -212,6 +270,8 @@ export default function FarmerPage() {
             {state === "PARCELS" && (locale === "bg" ? "Вашите полета" : "Your fields")}
             {state === "HISTORY" && (locale === "bg" ? "Исторически анализ" : "Frost history")}
             {state === "COVERAGE" && (locale === "bg" ? "Покритие" : "Coverage")}
+            {state === "CONFIRMATION" && (locale === "bg" ? "Потвърждение" : "Policy Summary")}
+            {state === "NO_COVERAGE" && (locale === "bg" ? "Без застраховка" : "No Coverage")}
             {state === "SIMULATION" && (locale === "bg" ? "Симулация" : "Simulation")}
           </p>
         </motion.div>
@@ -366,8 +426,8 @@ export default function FarmerPage() {
         {state === "HISTORY" && contract && (
           <HistoricalTimeline
             key="history"
-            events={weather.frostEvents}
-            contract={contract}
+            portfolioYears={weather.portfolioYears}
+            parcels={parcels}
             loading={weather.loading}
             onSeeCoverage={handleSeeCoverage}
           />
@@ -378,9 +438,61 @@ export default function FarmerPage() {
           <CoverageCard
             key="coverage"
             contract={contract}
-            onSimulate={handleSimulate}
-            enrichment={enrichment}
+            onComplete={handleCoverageComplete}
             parcels={parcels}
+            triggerRates={weather.triggerRates}
+          />
+        )}
+
+        {/* No coverage selected */}
+        {state === "NO_COVERAGE" && (
+          <motion.div
+            key="no-coverage"
+            className="absolute inset-0 z-30 flex flex-col items-center justify-center px-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="absolute inset-0 bg-black/35 backdrop-blur-sm" />
+            <motion.div
+              className="relative w-full max-w-sm bg-white/8 backdrop-blur-2xl border border-white/12 rounded-2xl overflow-hidden shadow-2xl text-center px-8 py-10"
+              initial={{ y: 24, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.05, type: "spring", damping: 24, stiffness: 200 }}
+            >
+              <p className="text-4xl mb-4">🌾</p>
+              <p className="text-white font-semibold text-lg mb-2">No coverage selected</p>
+              <p className="text-white/50 text-sm leading-relaxed mb-8">
+                {farmerName ? `${farmerName}'s` : "Your"} crops are exposed to frost risk without a policy.
+                Consider selecting coverage or adding a different farm.
+              </p>
+              <motion.button
+                onClick={() => setState("PARCELS")}
+                className="w-full py-3 bg-accent-amber text-bg-primary rounded-xl text-sm font-semibold
+                           hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer mb-3"
+                whileTap={{ scale: 0.98 }}
+              >
+                Try another farm
+              </motion.button>
+              <button
+                onClick={() => setState("COVERAGE")}
+                className="w-full text-white/40 text-xs hover:text-white/60 transition-colors cursor-pointer py-1 outline-none"
+              >
+                ← Back to coverage options
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Policy confirmation */}
+        {state === "CONFIRMATION" && (
+          <PolicyConfirmation
+            key="confirmation"
+            selections={policySelections}
+            parcels={parcels}
+            farmerName={farmerName}
+            onActivate={handleSimulate}
+            onBack={() => setState("COVERAGE")}
           />
         )}
       </AnimatePresence>
@@ -391,6 +503,7 @@ export default function FarmerPage() {
           key="simulation"
           contract={contract}
           onExit={handleRestart}
+          locationLabel={locationLabel}
         />
       )}
     </main>

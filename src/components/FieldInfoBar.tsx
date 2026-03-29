@@ -1,7 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight, Info } from "lucide-react";
 import type { FieldPin, FieldEnrichment } from "@/types";
 import { useLocale } from "@/lib/i18n";
 
@@ -16,6 +17,7 @@ interface FieldInfoBarProps {
 
 export default function FieldInfoBar({ pin, enrichment, parcelIndex, parcelTotal, onPrev, onNext }: FieldInfoBarProps) {
   const { t } = useLocale();
+  const [showTooltip, setShowTooltip] = useState(false);
   const showNav = parcelTotal !== undefined && parcelTotal > 1;
   const confidencePercent = Math.round(enrichment.basisRiskConfidence * 100);
   const confidenceColor =
@@ -24,28 +26,6 @@ export default function FieldInfoBar({ pin, enrichment, parcelIndex, parcelTotal
       : confidencePercent >= 65
         ? "text-accent-amber"
         : "text-danger-red";
-
-  const stats = [
-    {
-      label: t("field.location"),
-      value: enrichment.municipality !== "Unknown"
-        ? enrichment.municipality
-        : `${pin.lat.toFixed(3)}°N, ${pin.lng.toFixed(3)}°E`,
-    },
-    {
-      label: t("field.elevation"),
-      value: enrichment.elevation > 0 ? `${enrichment.elevation} m` : "—",
-    },
-    {
-      label: t("field.station"),
-      value: `${enrichment.nearestStation.name} · ${enrichment.stationDistance} km`,
-    },
-    {
-      label: t("field.confidence"),
-      value: `${confidencePercent}%`,
-      valueClass: confidenceColor,
-    },
-  ];
 
   return (
     <motion.div
@@ -67,21 +47,106 @@ export default function FieldInfoBar({ pin, enrichment, parcelIndex, parcelTotal
 
         {/* Stats */}
         <div className="flex items-center gap-6">
-          {stats.map((s, i) => (
-            <div key={s.label} className="flex items-center gap-6">
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[9px] text-white/50 uppercase tracking-widest whitespace-nowrap">
-                  {s.label}
-                </span>
-                <span className={`text-sm font-medium font-mono whitespace-nowrap ${s.valueClass ?? "text-white"}`}>
-                  {s.value}
-                </span>
-              </div>
-              {i < stats.length - 1 && (
-                <div className="w-px h-6 bg-white/10" />
-              )}
+          {/* Location */}
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-[9px] text-white/50 uppercase tracking-widest whitespace-nowrap">
+                {t("field.location")}
+              </span>
+              <span className="text-sm font-medium font-mono whitespace-nowrap text-white">
+                {enrichment.municipality !== "Unknown"
+                  ? enrichment.municipality
+                  : `${pin.lat.toFixed(3)}°N, ${pin.lng.toFixed(3)}°E`}
+              </span>
             </div>
-          ))}
+            <div className="w-px h-6 bg-white/10" />
+          </div>
+
+          {/* Elevation */}
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-[9px] text-white/50 uppercase tracking-widest whitespace-nowrap">
+                {t("field.elevation")}
+              </span>
+              <span className="text-sm font-medium font-mono whitespace-nowrap text-white">
+                {enrichment.elevation > 0 ? `${enrichment.elevation} m` : "—"}
+              </span>
+            </div>
+            <div className="w-px h-6 bg-white/10" />
+          </div>
+
+          {/* Station */}
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-[9px] text-white/50 uppercase tracking-widest whitespace-nowrap">
+                {t("field.station")}
+              </span>
+              <span className="text-sm font-medium font-mono whitespace-nowrap text-white">
+                {enrichment.nearestStation.name} · {enrichment.stationDistance} km
+              </span>
+            </div>
+            <div className="w-px h-6 bg-white/10" />
+          </div>
+
+          {/* Confidence — with tooltip */}
+          <div className="relative flex flex-col items-center gap-0.5">
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] text-white/50 uppercase tracking-widest whitespace-nowrap">
+                {t("field.confidence")}
+              </span>
+              <button
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+                onClick={() => setShowTooltip((v) => !v)}
+                className="text-white/30 hover:text-white/70 transition-colors outline-none cursor-pointer"
+              >
+                <Info className="w-3 h-3" />
+              </button>
+            </div>
+            <span className={`text-sm font-medium font-mono whitespace-nowrap ${confidenceColor}`}>
+              {confidencePercent}%
+            </span>
+
+            {/* Tooltip */}
+            <AnimatePresence>
+              {showTooltip && (
+                <motion.div
+                  className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-72
+                             bg-bg-primary/95 backdrop-blur-xl border border-white/20
+                             rounded-2xl px-4 py-4 shadow-2xl pointer-events-none z-50"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <p className="text-white text-sm font-semibold mb-2">Basis Risk Confidence</p>
+                  <p className="text-white/70 text-xs leading-relaxed mb-3">
+                    How closely your field's temperature tracks the{" "}
+                    <span className="text-white font-medium">{enrichment.nearestStation.name}</span> station —
+                    computed from the Pearson correlation of 3 years of spring ERA5 readings at both locations.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-success-green" />
+                      <span className="text-success-green text-xs">≥85% reliable</span>
+                    </div>
+                    <span className="text-white/20">·</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-accent-amber" />
+                      <span className="text-accent-amber text-xs">65–84%</span>
+                    </div>
+                    <span className="text-white/20">·</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-danger-red" />
+                      <span className="text-danger-red text-xs">&lt;65% high risk</span>
+                    </div>
+                  </div>
+                  {/* Arrow */}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-bg-primary/95 border-r border-b border-white/20 rotate-45 -mt-1.5" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Next arrow */}

@@ -238,6 +238,64 @@ function generateFallbackData(
   return data;
 }
 
+/**
+ * Lightweight ERA5 fetch for correlation analysis.
+ * Fetches only March–May for 3 recent years — enough data for a
+ * statistically meaningful correlation without a heavy API call.
+ * Cached separately from the full historical dataset.
+ */
+export async function fetchSpringTemperatures(
+  lat: number,
+  lng: number,
+): Promise<Map<string, number>> {
+  const cacheKeySuffix = `_spring_${lat.toFixed(3)}_${lng.toFixed(3)}`;
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem(CACHE_PREFIX + cacheKeySuffix);
+      if (raw) {
+        const cached = JSON.parse(raw);
+        if (Date.now() - cached.timestamp < CACHE_TTL_MS) {
+          return new Map(cached.data);
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  const params = new URLSearchParams({
+    latitude: lat.toFixed(4),
+    longitude: lng.toFixed(4),
+    start_date: "2022-03-01",
+    end_date: "2024-05-31",
+    hourly: "temperature_2m",
+    timezone: "Europe/Sofia",
+  });
+
+  const res = await fetch(`${OPEN_METEO_ARCHIVE}?${params}`);
+  if (!res.ok) throw new Error(`Open-Meteo ${res.status}`);
+
+  const json = await res.json();
+  const times: string[] = json.hourly?.time ?? [];
+  const temps: (number | null)[] = json.hourly?.temperature_2m ?? [];
+
+  const map = new Map<string, number>();
+  for (let i = 0; i < times.length; i++) {
+    if (temps[i] !== null && temps[i] !== undefined) {
+      map.set(times[i], temps[i] as number);
+    }
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(
+        CACHE_PREFIX + cacheKeySuffix,
+        JSON.stringify({ timestamp: Date.now(), data: [...map.entries()] }),
+      );
+    } catch { /* ignore */ }
+  }
+
+  return map;
+}
+
 /** Linear interpolation from the nearest valid neighbors */
 function interpolateFromNeighbors(
   data: HourlyDataPoint[],

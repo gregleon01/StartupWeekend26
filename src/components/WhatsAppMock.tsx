@@ -28,7 +28,7 @@ export default function WhatsAppMock({ amount }: WhatsAppMockProps) {
 
         {/* Message body */}
         <div className="px-4 py-3">
-          <p className="text-white/90 text-sm font-medium mb-1">Niva</p>
+          <p className="text-white/90 text-sm font-medium mb-1">Aklima</p>
           <p className="text-white/70 text-sm leading-relaxed">
             Frost event detected on your field.{" "}
             <span className="text-whatsapp-green font-mono font-bold">

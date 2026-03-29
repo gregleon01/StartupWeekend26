@@ -1,5 +1,6 @@
 import type { FieldPin, FieldEnrichment } from "@/types";
-import { findNearestStation, calculateBasisRiskConfidence } from "./basisRisk";
+import { findNearestStation, computeCorrelationConfidence } from "./basisRisk";
+import { fetchSpringTemperatures } from "./weather";
 
 /* ================================================================== */
 /*  Geospatial Enrichment                                              */
@@ -91,21 +92,24 @@ async function fetchElevation(lat: number, lng: number): Promise<number> {
 }
 
 /**
- * Full enrichment pipeline: geocode + elevation + basis risk.
- * All three calls run in parallel for speed.
+ * Full enrichment pipeline: geocode + elevation + ERA5 correlation confidence.
+ * Geocode and elevation run in parallel. ERA5 correlation fetches two
+ * temperature series (field + nearest station) and computes Pearson r —
+ * the real statistical measure of how well the station represents the field.
  */
 export async function enrichField(pin: FieldPin): Promise<FieldEnrichment> {
-  const [municipality, elevation] = await Promise.all([
+  const { station, distanceKm } = findNearestStation(pin);
+
+  const [municipality, elevation, fieldTemps, stationTemps] = await Promise.all([
     reverseGeocode(pin.lat, pin.lng),
     fetchElevation(pin.lat, pin.lng),
+    fetchSpringTemperatures(pin.lat, pin.lng).catch(() => new Map<string, number>()),
+    fetchSpringTemperatures(station.lat, station.lng).catch(() => new Map<string, number>()),
   ]);
 
-  const { station, distanceKm } = findNearestStation(pin);
-  const confidence = calculateBasisRiskConfidence(
-    distanceKm,
-    elevation,
-    station.elevation,
-  );
+  const confidence = fieldTemps.size > 0 && stationTemps.size > 0
+    ? computeCorrelationConfidence(fieldTemps, stationTemps, distanceKm)
+    : fallbackConfidence(distanceKm, Math.round(elevation), station.elevation);
 
   return {
     municipality,
@@ -114,4 +118,16 @@ export async function enrichField(pin: FieldPin): Promise<FieldEnrichment> {
     stationDistance: distanceKm,
     basisRiskConfidence: confidence,
   };
+}
+
+/** Distance/elevation fallback if ERA5 is unavailable */
+function fallbackConfidence(
+  distanceKm: number,
+  fieldElevation: number,
+  stationElevation: number,
+): number {
+  const distancePenalty = Math.min(distanceKm / 25, 0.5);
+  const elevDiff = Math.abs(fieldElevation - stationElevation);
+  const elevationPenalty = Math.min(elevDiff / 500, 0.3);
+  return +Math.max(0, 1 - distancePenalty - elevationPenalty).toFixed(2);
 }

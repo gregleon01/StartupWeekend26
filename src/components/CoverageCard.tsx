@@ -2,15 +2,15 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import type { ParametricContract, FieldEnrichment, FarmerParcel } from "@/types";
+import type { ParametricContract, FarmerParcel, PolicySelection, CropKey } from "@/types";
 import { contracts as contractsLib } from "@/lib/contracts";
 import { useLocale } from "@/lib/i18n";
 
 interface CoverageCardProps {
   contract: ParametricContract;
-  onSimulate: () => void;
-  enrichment?: FieldEnrichment | null;
+  onComplete: (selections: PolicySelection[]) => void;
   parcels?: FarmerParcel[];
+  triggerRates?: Partial<Record<CropKey, number>>;
 }
 
 function formatWindow(start: string, end: string) {
@@ -37,24 +37,34 @@ const TIERS: Tier[] = [
   { name: "Premium", badge: "Max Protection", payoutMultiplier: 1.8, premiumMultiplier: 1.5 },
 ];
 
+function loadingFactor(triggerRate: number): number {
+  return Math.min(Math.max(triggerRate / 0.3, 0.5), 2.5);
+}
+
 function TierCard({
   tier,
   contract,
-  onSimulate,
+  onSelect,
   index,
   selected,
-  onSelect,
+  cropKey,
+  triggerRates,
 }: {
   tier: Tier;
   contract: ParametricContract;
-  onSimulate: () => void;
+  onSelect: () => void;
   index: number;
   selected: boolean;
-  onSelect: () => void;
+  cropKey: CropKey;
+  triggerRates?: Partial<Record<CropKey, number>>;
 }) {
   const { t } = useLocale();
+  const rate = triggerRates?.[cropKey] ?? 0.3;
+  const lf = loadingFactor(rate);
   const payout = Math.round(contract.payoutPerHectare * tier.payoutMultiplier);
-  const premium = Math.round(contract.premiumPerHectare * tier.premiumMultiplier);
+  const premium = Math.round(contract.premiumPerHectare * tier.premiumMultiplier * lf);
+  const loadingPct = Math.round((lf - 1) * 100);
+  const showLoading = Math.abs(loadingPct) >= 5;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -133,17 +143,30 @@ function TierCard({
       </div>
 
       {/* Premium */}
-      <p className="text-white/60 text-xs mb-5">
-        {t("coverage.premium")}:{" "}
-        <span className="font-mono text-white">
-          &euro;{premium}
-        </span>
-        {t("coverage.perSeason")}
-      </p>
+      <div className="mb-1">
+        <p className="text-white/60 text-xs">
+          {t("coverage.premium")}:{" "}
+          <span className="font-mono text-white">
+            &euro;{premium}
+          </span>
+          {t("coverage.perSeason")}
+        </p>
+      </div>
+
+      {/* Risk loading badge */}
+      {showLoading && (
+        <p className="text-[9px] mb-4">
+          <span className="text-white/40">Risk-adjusted </span>
+          <span className={loadingPct > 0 ? "text-red-400" : "text-green-400"}>
+            {loadingPct > 0 ? "+" : ""}{loadingPct}%
+          </span>
+        </p>
+      )}
+      {!showLoading && <div className="mb-4" />}
 
       {/* CTA */}
       <motion.button
-        onClick={(e) => { e.stopPropagation(); onSimulate(); }}
+        onClick={(e) => { e.stopPropagation(); onSelect(); }}
         className={`w-full py-3 rounded-xl font-semibold text-sm transition-all cursor-pointer ${
           selected || tier.recommended
             ? "bg-accent-amber text-bg-primary hover:brightness-110"
@@ -159,8 +182,9 @@ function TierCard({
 
 export default function CoverageCard({
   contract,
-  onSimulate,
+  onComplete,
   parcels,
+  triggerRates,
 }: CoverageCardProps) {
   const { locale } = useLocale();
 
@@ -180,15 +204,55 @@ export default function CoverageCard({
 
   const [step, setStep] = React.useState(0);
   const [selectedTier, setSelectedTier] = React.useState<number>(1);
+  const [accumulated, setAccumulated] = React.useState<PolicySelection[]>([]);
 
   const activeContract = uniqueContracts[step] ?? contract;
+  const cropKey = activeContract.id.replace("bg-", "").replace("-frost", "") as CropKey;
   const isLast = step === uniqueContracts.length - 1;
   const total = uniqueContracts.length;
 
-  const advance = () => {
+  // Hectares for the active crop
+  const cropHectares = React.useMemo(() => {
+    if (!parcels) return 0;
+    return parcels
+      .filter((p) => p.crop === cropKey)
+      .reduce((s, p) => s + p.hectares, 0);
+  }, [parcels, cropKey]);
+
+  const buildSelection = (tierIndex: number): PolicySelection => {
+    const tier = TIERS[tierIndex];
+    const rate = triggerRates?.[cropKey] ?? 0.3;
+    const lf = loadingFactor(rate);
+    const premPerHa = Math.round(
+      activeContract.premiumPerHectare * tier.premiumMultiplier * lf,
+    );
+    return {
+      cropKey,
+      tierIndex,
+      tierName: tier.name,
+      hectares: cropHectares,
+      annualPremiumPerHectare: premPerHa,
+      totalAnnualPremium: Math.round(premPerHa * cropHectares),
+    };
+  };
+
+  const buildSkipSelection = (): PolicySelection => ({
+    cropKey,
+    tierIndex: -1,
+    tierName: "None",
+    hectares: cropHectares,
+    annualPremiumPerHectare: 0,
+    totalAnnualPremium: 0,
+  });
+
+  const advance = (skip = false) => {
+    const sel = skip ? buildSkipSelection() : buildSelection(selectedTier);
+    const next = [...accumulated, sel];
+
     if (isLast) {
-      onSimulate();
+      onComplete(next);
     } else {
+      setAccumulated(next);
       setStep((s) => s + 1);
       setSelectedTier(1);
     }
@@ -239,17 +303,18 @@ export default function CoverageCard({
             key={`${activeContract.crop}-${tier.name}`}
             tier={tier}
             contract={activeContract}
-            onSimulate={advance}
+            onSelect={() => { setSelectedTier(i); advance(false); }}
             index={i}
             selected={selectedTier === i}
-            onSelect={() => setSelectedTier(i)}
+            cropKey={cropKey}
+            triggerRates={triggerRates}
           />
         ))}
       </motion.div>
 
       {/* No insurance option */}
       <button
-        onClick={advance}
+        onClick={() => advance(true)}
         className="relative text-white/35 text-xs hover:text-white/60 transition-colors cursor-pointer underline underline-offset-2 outline-none"
       >
         {locale === "bg"

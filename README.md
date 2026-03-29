@@ -1,10 +1,8 @@
-# Niva — Parametric Crop Insurance
+# Aklima — Parametric Crop Insurance
 
 Automatic weather-triggered micro-insurance for small farms in Eastern Europe. No paperwork. No adjusters. Payout in 48 hours.
 
-**Live demo**: [vercel-url-placeholder]
-
-Built at **HackAUBG 8.0 · The Hub Sofia**
+Built at **HackAUBG 8.0 · The Hub Blagoevgrad**
 
 ---
 
@@ -15,19 +13,19 @@ Built at **HackAUBG 8.0 · The Hub Sofia**
 - **75%** of those losses are completely uninsured
 - Traditional insurance is structurally broken for small farms: adjusters cost more than the claim, paperwork takes months, and trust is low
 
-## What Niva does
+## What Aklima does
 
 A farmer opens the app, pins their field on a satellite map, selects their crop, and receives an instant parametric guarantee:
 
-> *"If temperature drops below −2°C for 4+ consecutive hours during bloom (Apr 1–May 15), you receive €340/ha — automatically, no claim filed."*
+> *"If temperature drops below −2°C for 4+ consecutive hours during bloom (Apr 1–May 15), you receive €750/ha — automatically, no claim filed."*
 
-The platform pulls 10 years of real hourly temperature data for that exact field, shows which years would have triggered a payout, and demonstrates a live frost simulation with automatic payout notification. The insurer dashboard shows 200+ fields across a region with portfolio-level risk analytics.
+The platform pulls 10 years of real hourly temperature data for that exact field, shows which years would have triggered a payout, and demonstrates a live frost simulation with automatic payout notification. The insurer dashboard shows 127 fields across Bulgaria with portfolio-level risk analytics and a real-time frost event simulation.
 
 ---
 
 ## Business model
 
-Niva is a **parametric crop insurance MGA (Managing General Agent)**. We design the trigger thresholds, price the premiums, build the platform that monitors weather data and fires payouts, and acquire farmers through cooperative partnerships. A licensed insurer fronts the policy. A reinsurer (TBD) holds the capital reserve against actual losses. We carry no balance sheet risk.
+Aklima is a **parametric crop insurance MGA (Managing General Agent)**. We design the trigger thresholds, price the premiums, build the platform that monitors weather data and fires payouts, and acquire farmers through cooperative partnerships. A licensed insurer fronts the policy. A reinsurer (TBD) holds the capital reserve against actual losses. We carry no balance sheet risk.
 
 **Revenue:**
 - 20–30% commission on gross written premium
@@ -38,34 +36,102 @@ Niva is a **parametric crop insurance MGA (Managing General Agent)**. We design 
 
 ---
 
+## Running the project
+
+```bash
+# 1. Clone
+git clone https://github.com/gregleon01/StartupWeekend26.git
+cd StartupWeekend26
+
+# 2. Install dependencies
+pnpm install
+
+# 3. Set environment variables
+echo "NEXT_PUBLIC_MAPBOX_TOKEN=your_token_here" > .env.local
+# Free token at https://account.mapbox.com — 50k map loads/month
+
+# 4. Start development server
+pnpm dev
+```
+
+Once running, open:
+
+| Route                               | Description                                                         |
+|-------------------------------------|---------------------------------------------------------------------|
+| `http://localhost:3000`             | Farmer onboarding flow                                              |
+| `http://localhost:3000/farmer`      | Farmer app — field pinning, contract, simulation                    |
+| `http://localhost:3000/admin`       | Insurer dashboard — portfolio map, risk analytics, frost simulation |
+| `http://localhost:3000/dashboard`   | Legacy dashboard view                                               |
+
+```bash
+# Build for production
+pnpm build && pnpm start
+
+# Run tests
+pnpm test        # 13 tests, <200ms
+```
+
+---
+
+## Main features
+
+### Farmer app (`/farmer`)
+1. **Field pinning** — tap a satellite map to place your field; the app resolves municipality, elevation, and nearest weather station in ~500ms
+2. **Crop selection** — choose from cherries, grapes, wheat, or sunflower; contract terms (threshold, window, payout) are shown immediately
+3. **Historical timeline** — 10-year chart of frost events at that exact location, showing which years triggered and which didn't, with a climate trend line
+4. **Coverage card** — instant parametric quote with premium, payout per hectare, and trigger confidence score
+5. **Frost simulation** — replays the real April 7–8 2025 Kyustendil frost event hour by hour; the arc gauge drops, the trigger fires at 04:00, a WhatsApp-style payout notification appears
+6. **WhatsApp delivery** — simulates the payout notification a farmer receives on their phone (no app download required in production)
+
+### Insurer dashboard (`/admin`)
+1. **Full-screen portfolio map** — 127 fields across Bulgaria colored by weather station zone (20 zones), with hover tooltips showing crop, hectares, and payout amount
+2. **Real-time stats** — fields, hectares covered, premiums collected, triggered count, total paid out, loss ratio
+3. **Claims tab** — list of triggered claims with Approve / Reject controls
+4. **Risk tab** — crop exposure bars, monthly trigger chart, VaR 95%, correlation zones, diversification benefit
+5. **Forecast tab** — 6-year payout trend chart anchored to `expectedAnnualPayout`, next season estimate vs 5-year average vs worst case
+6. **Simulate Frost Event** — animates a frost front sweeping west→east across Bulgaria over 5 seconds: fields light up red as they're hit, claims appear live in the Claims tab one by one, Triggered count and Paid Out increment in real time; click Reset to restore baseline
+
+---
+
 ## Architecture
 
 ```
 src/
 ├── app/
-│   ├── page.tsx                 # Farmer app — 5-state UI machine
-│   └── dashboard/page.tsx       # Insurer dashboard — portfolio analytics
+│   ├── page.tsx                 # Landing / entry point
+│   ├── farmer/page.tsx          # Farmer app — field pinning, contract, simulation
+│   ├── admin/page.tsx           # Insurer dashboard — full-screen map + glass panel
+│   └── dashboard/page.tsx       # Legacy dashboard
 ├── components/
 │   ├── MapView.tsx              # Mapbox satellite map + field pinning
+│   ├── DrawableMap.tsx          # Map with drawable parcel boundaries
 │   ├── FieldInfoBar.tsx         # Location enrichment display (elevation, basis risk)
 │   ├── CropSelector.tsx         # Crop selection bottom sheet
-│   ├── HistoricalTimeline.tsx   # 10-year frost event timeline + trend
+│   ├── HistoricalTimeline.tsx   # 10-year frost event timeline + glow effects
 │   ├── CoverageCard.tsx         # Parametric contract offer
-│   ├── FrostSimulation.tsx      # 5-phase animated frost event demo
+│   ├── FrostSimulation.tsx      # Arc gauge, phase badge, live frost simulation
 │   ├── TemperatureGauge.tsx     # Real-time temperature gauge
 │   ├── PayoutNotification.tsx   # Payout confirmation card
 │   ├── WhatsAppMock.tsx         # WhatsApp delivery notification mock
-│   └── InsuredFieldsMap.tsx     # Dashboard: 200+ field markers
+│   ├── InsuredFieldsMap.tsx     # Portfolio map: 127 fields, zone colors, sim overlay
+│   ├── FarmerOnboarding.tsx     # Onboarding flow wrapper
+│   ├── WeatherOverlay.tsx       # Rain radar overlay
+│   ├── LanguageToggle.tsx       # EN/BG locale switch
+│   └── charts/                  # Shared chart components
 ├── lib/
-│   ├── contracts.ts             # Generic parametric contract schema
+│   ├── contracts.ts             # Parametric contract schema + 4 crop products
 │   ├── weather.ts               # Open-Meteo pipeline: fetch, batch, cache, validate
-│   ├── frostAnalysis.ts         # Frost detection FSM (core engine)
-│   ├── basisRisk.ts             # Basis risk confidence model
+│   ├── frostAnalysis.ts         # Frost detection FSM (core trigger engine)
+│   ├── basisRisk.ts             # Basis risk confidence model + 20-station network
 │   ├── geoEnrich.ts             # Location enrichment: geocode + elevation + station
-│   ├── statistics.ts            # Linear regression, trend analysis, portfolio VaR
-│   └── mockFields.ts            # Deterministic mock portfolio (seed 42)
+│   ├── statistics.ts            # OLS regression, trend analysis, portfolio VaR
+│   ├── mockFields.ts            # Deterministic 127-field portfolio (seed 42)
+│   ├── farmlandCoords.json      # 127 synthetic Bulgarian agricultural coordinates
+│   ├── geo.ts                   # Geospatial utilities
+│   └── i18n.ts                  # Internationalisation strings
 ├── hooks/
-│   └── useWeatherData.ts        # Fetch + cache + analyze weather data
+│   ├── useWeatherData.ts        # Fetch + cache + analyse weather for a field
+│   └── usePortfolioWeather.ts   # Historical trigger rates for portfolio dashboard
 └── types/
     └── index.ts                 # Full TypeScript type definitions
 ```
@@ -76,7 +142,7 @@ src/
 
 **File:** `src/lib/frostAnalysis.ts`
 
-The trigger engine is a **4-state finite state machine** that walks hourly temperature data chronologically and evaluates parametric contract conditions. It is a pure function — deterministic, auditable, side-effect free. The same code could run directly on a production backend.
+The trigger engine is a **4-state finite state machine** that walks hourly temperature data chronologically and evaluates parametric contract conditions. It is a pure function — deterministic, auditable, side-effect free.
 
 ```
 ┌─────────────┐   temp < threshold      ┌──────────────┐
@@ -105,11 +171,11 @@ The trigger engine is a **4-state finite state machine** that walks hourly tempe
 - Events spanning midnight (continuous hour tracking, not day-bounded)
 - Multiple events in a single season (worst event kept per year)
 - Threshold equality (strict breach: `value < threshold`, not `≤`)
-- Suspect/null data points (skipped, not interpolated mid-event)
+- Suspect/null data points (skipped, not counted mid-event)
 - Year boundary crossings (open streaks closed at Dec 31)
 - Timezone offset (all timestamps converted to Europe/Sofia EET before evaluation)
 
-**Every state transition is logged** with timestamp, temperature value, and transition reason — producing a full audit trail for any payout decision.
+Every state transition is logged with timestamp, temperature value, and transition reason — producing a full audit trail for any payout decision.
 
 ---
 
@@ -134,15 +200,12 @@ interface ParametricContract {
 
 **Current products:**
 
-| Crop | Window | Threshold | Duration | Payout |
-|------|--------|-----------|----------|--------|
-| Cherries | Apr 1–May 15 | −2°C | 4h | €340/ha |
-| Grapes | Apr 10–May 20 | −1.5°C | 3h | €280/ha |
-| Wheat | Mar 15–Apr 30 | −5°C | 6h | €180/ha |
-| Sunflower | Apr 15–May 31 | −2°C | 4h | €220/ha |
-
-**Adding Romania:** update country bounds in `contracts.ts`. No other changes.
-**Adding drought:** add one contract object with `triggerVariable: 'precipitation'`, `triggerDirection: 'above'`. The FSM evaluates it identically.
+| Crop       | Window          | Threshold | Duration | Payout/ha | Premium/ha |
+|------------|-----------------|-----------|----------|-----------|------------|
+| Cherries   | Apr 1–May 15    | −2°C      | 4h       | €750      | €68        |
+| Grapes     | Apr 10–May 20   | −1.5°C    | 3h       | €500      | €45        |
+| Wheat      | Mar 15–Apr 30   | −5°C      | 6h       | €470      | €42        |
+| Sunflower  | Apr 15–May 31   | −2°C      | 4h       | €280      | €25        |
 
 ---
 
@@ -153,15 +216,15 @@ interface ParametricContract {
 Three-stage pipeline with no single point of failure:
 
 **Stage 1 — Client cache**
-Coordinates rounded to 3 decimal places (~110m grid) as cache key. Results stored in `localStorage` with 24-hour TTL. Prevents redundant API calls across sessions and across crops sharing the same field.
+Coordinates rounded to 3 decimal places (~110m grid) as cache key. Results stored in `localStorage` with 24-hour TTL.
 
 **Stage 2 — Batched API fetch**
 10 years of data fetched in 2-year batches via `Promise.allSettled()`. One failed batch does not abort the pipeline. Only March–June data is requested per year (covers all sensitive windows), reducing payload by ~65%.
 
 **Stage 3 — Data quality**
-Each hourly reading validated: nulls flagged as `suspect`, physically impossible values (< −40°C or > 50°C) rejected. Valid neighbors within a 6-hour window used for linear interpolation where possible. Interpolated readings tagged `quality: "interpolated"` and excluded from trigger evaluation.
+Each hourly reading validated: nulls flagged as `suspect`, physically impossible values (< −40°C or > 50°C) rejected. Valid neighbors within a 6-hour window used for linear interpolation where possible. Interpolated readings excluded from trigger evaluation.
 
-**Fallback:** If all API batches fail (no wifi, API down), the pipeline falls back to a deterministic mock data generator seeded by latitude. The mock produces a realistic climatological pattern: seasonal temperature curve, diurnal cycle, and occasional frost events (~30% of years, matching real Kyustendil frequency). The user never sees an error — the demo works offline.
+**Fallback:** If all API batches fail, the pipeline falls back to a deterministic mock data generator seeded by latitude. The demo works offline.
 
 ---
 
@@ -169,9 +232,7 @@ Each hourly reading validated: nulls flagged as `suspect`, physically impossible
 
 **File:** `src/lib/basisRisk.ts`
 
-Basis risk is the fundamental problem in parametric insurance: the weather station may read a different temperature than what actually occurred on the farm. A station on a hilltop reads +1°C while the valley field below is at −2°C — no trigger fires, farmer suffers real loss.
-
-Niva quantifies this for every field:
+Basis risk is the gap between what the nearest weather station reads and what actually happened on the farm. Aklima quantifies this for every field:
 
 ```
 confidence = 1 − (distancePenalty + elevationPenalty)
@@ -180,49 +241,7 @@ distancePenalty  = min(distance_km / 25, 0.50)
 elevationPenalty = min(|field_elev − station_elev| / 500, 0.30)
 ```
 
-**Examples:**
-- Field 2km from station, same elevation → **92% confidence**
-- Field 15km away, 300m elevation difference → **52% confidence**
-- Field 25km away, 500m elevation difference → **20% confidence**
-
-The nearest station is found via Haversine distance across a network of 20 Bulgarian meteorological stations. Field elevation is fetched in real time from the Open-Meteo Elevation API. The confidence score is displayed to the farmer and used for portfolio correlation zoning in the dashboard.
-
----
-
-## Geospatial enrichment
-
-**File:** `src/lib/geoEnrich.ts`
-
-When a farmer pins a field, three data sources are queried in parallel:
-
-1. **Mapbox Geocoding API** — resolves lat/lng to municipality name
-2. **Open-Meteo Elevation API** — fetches field elevation in metres
-3. **Basis risk lookup** — synchronous, finds nearest station and computes confidence
-
-Result displayed in `FieldInfoBar`:
-> *"Kyustendil municipality · 587m elevation · Nearest station: 2.1km · Trigger confidence: 92%"*
-
-Latency: ~500ms (two parallel HTTP calls).
-
----
-
-## Historical statistics
-
-**File:** `src/lib/statistics.ts`
-
-After fetching 10 years of real temperature data, the engine computes:
-
-- **Event count per year** — how many seasons had a triggering frost event
-- **OLS linear regression** on (year, event_count) — slope, intercept, R²
-- **Percent change** over the decade — directional climate signal
-- **Human-readable trend** — "Frost events at this location have increased ~40% over the last decade"
-
-Portfolio-level metrics (insurer dashboard):
-- **Total exposure** — Σ(hectares × payout_per_ha) across all insured fields
-- **Expected annual payout** — base trigger rate × total exposure
-- **VaR 95%** — 95th-percentile annual payout accounting for spatial correlation
-- **Correlation zones** — fields grouped by nearest weather station (shared trigger risk)
-- **Diversification benefit** — reduction from covering multiple crops and zones
+The nearest station is found via Haversine distance across a network of 20 Bulgarian meteorological stations. The confidence score is displayed to the farmer and used for portfolio correlation zoning in the dashboard.
 
 ---
 
@@ -230,27 +249,21 @@ Portfolio-level metrics (insurer dashboard):
 
 **File:** `src/lib/frostAnalysis.ts` → `generateSimulationData()`
 
-The frost simulation replays **actual weather data** from the April 7–8, 2025 frost that destroyed 95% of cherry crops in the Kyustendil region — the worst agricultural frost event in Bulgaria in 25 years.
-
-**Data source:** Open-Meteo Historical Weather API, station Kyustendil (42.283°N, 22.694°E, 520m), timezone Europe/Sofia.
+The frost simulation in the farmer app replays **actual weather data** from the April 7–8, 2025 frost that destroyed 95% of cherry crops in the Kyustendil region.
 
 ```
-Apr 7  18:00   4.2°C   ← sunset, cooling begins
-Apr 7  22:00  −0.9°C   ← crosses 0°C
 Apr 8  00:00  −2.1°C   ← crosses cherry lethal threshold (−2°C)
 Apr 8  01:00  −2.2°C
 Apr 8  02:00  −2.5°C
 Apr 8  03:00  −2.4°C
 Apr 8  04:00  −2.6°C   ← TRIGGER FIRES (4th consecutive hour below −2°C)
-Apr 8  05:00  −2.9°C
 Apr 8  06:00  −3.1°C   ← minimum temperature
 Apr 8  07:00  −1.4°C   ← sunrise recovery
-Apr 8  12:00   6.2°C   ← full recovery
 ```
 
-**7 consecutive hours below −2°C.** Contract requires 4h → payout triggered at 04:00. The simulation steps through all 19 real hourly readings with timestamps displayed on screen.
+**Real-world impact:** ~95% of Kyustendil's cherry harvest destroyed, estimated losses €3–5M.
 
-**Real-world impact:** ~95% of Kyustendil's cherry harvest destroyed, estimated losses €3–5M, retail cherry prices surged to 20 BGN/kg.
+The admin dashboard's **Simulate Frost Event** is a separate portfolio-level simulation — it sweeps all triggered fields west→east across Bulgaria, lighting them up on the map and generating live claims in the panel.
 
 ---
 
@@ -258,99 +271,100 @@ Apr 8  12:00   6.2°C   ← full recovery
 
 **File:** `src/lib/__tests__/frostAnalysis.test.ts`
 
-The trigger engine has a comprehensive test suite (Vitest) covering:
-
-- **Clear trigger** — 6h below threshold → payout fires
-- **Near-miss** — 3h below threshold → no trigger (requires 4h)
-- **Midnight-spanning events** — streak continues across date boundary
-- **Multiple events per year** — worst event kept (triggered > untriggered, longer > shorter)
-- **No frost** — returns zero-duration placeholder events for all years
-- **Threshold boundary** — exactly at threshold is NOT a breach (strict `<`)
-- **Suspect data** — quality-flagged points skipped, not counted as breach hours
-- **Audit trail** — every triggered event carries FSM state transition log
-- **Sensitive window** — data outside Apr 1–May 15 ignored for cherries
-- **Loss estimation** — scales with severity, caps at 2× base payout
-- **Real data** — simulation returns actual Kyustendil 2025 readings (19 points, min −3.1°C)
-
 ```bash
 pnpm test       # 13 tests, <200ms
 ```
+
+Test coverage: clear trigger, near-miss, midnight-spanning events, multiple events per year, no-frost baseline, threshold boundary (strict `<`), suspect data skipping, audit trail, sensitive window enforcement, loss estimation, real Kyustendil data.
 
 ---
 
 ## Security
 
-- **Content Security Policy** headers set in `next.config.ts`: `X-Content-Type-Options`, `X-Frame-Options: DENY`, `X-XSS-Protection`, `Referrer-Policy`, and a full `Content-Security-Policy` directive whitelisting only required external domains
-- **Coordinate validation** — all field pins validated against country bounding boxes before any API call is made; coordinates outside Bulgaria/Romania/Poland are rejected
+- **Content Security Policy** headers set in `next.config.ts`
+- **Coordinate validation** — all field pins validated against country bounding boxes before any API call
 - **Environment variables** — all API keys via `NEXT_PUBLIC_` env vars, never hardcoded
-- **No SQL injection surface** — client-side only, no database queries
+- **No SQL injection surface** — client-side only, no database
 - **XSS** — React auto-escaping, no `dangerouslySetInnerHTML`
-- **HTTPS** — enforced at deployment (Vercel)
-
----
-
-## Setup
-
-```bash
-# 1. Clone
-git clone https://github.com/gregleon01/StartupWeekend26.git
-cd StartupWeekend26
-
-# 2. Install
-pnpm install
-
-# 3. Environment
-echo "NEXT_PUBLIC_MAPBOX_TOKEN=your_token_here" > .env.local
-# Free token at https://account.mapbox.com — 50k map loads/month
-
-# 4. Run
-pnpm dev
-# Farmer app  → http://localhost:3000
-# Insurer dashboard → http://localhost:3000/dashboard
-
-# 5. Build
-pnpm build && pnpm start
-```
 
 ---
 
 ## Environment variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NEXT_PUBLIC_MAPBOX_TOKEN` | Yes | Mapbox GL JS access token |
+| Variable                      | Required | Description                                                                        |
+|-------------------------------|----------|------------------------------------------------------------------------------------|
+| `NEXT_PUBLIC_MAPBOX_TOKEN`    | Yes      | Mapbox GL JS access token — free at [account.mapbox.com](https://account.mapbox.com) |
 
 ---
 
 ## Data sources
 
-| Source | Data | Cost |
-|--------|------|------|
-| [Open-Meteo Archive](https://open-meteo.com) | Hourly temperature 2015–2025 | Free, no key |
-| [Open-Meteo Elevation](https://open-meteo.com/en/docs/elevation-api) | Field elevation (metres) | Free, no key |
-| [Mapbox Geocoding v5](https://docs.mapbox.com/api/search/geocoding/) | Municipality name | Free tier |
-| [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) | Satellite basemap | Free tier |
-| [RainViewer](https://www.rainviewer.com/api.html) | Precipitation radar overlay | Free |
+| Source                                                                      | Data                          | Cost          |
+|-----------------------------------------------------------------------------|-------------------------------|---------------|
+| [Open-Meteo Archive](https://open-meteo.com)                                | Hourly temperature 2015–2025  | Free, no key  |
+| [Open-Meteo Elevation](https://open-meteo.com/en/docs/elevation-api)        | Field elevation (metres)      | Free, no key  |
+| [Mapbox Geocoding v5](https://docs.mapbox.com/api/search/geocoding/)        | Municipality name             | Free tier     |
+| [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/)                       | Satellite basemap             | Free tier     |
+| [RainViewer](https://www.rainviewer.com/api.html)                           | Precipitation radar overlay   | Free          |
 
 ---
 
 ## What's next
 
-- **Multi-station interpolation** — weight trigger probability across the 2–3 nearest stations rather than using the single closest, reducing basis risk
-- **Empirical VaR calibration** — run the FSM across all historical years for all portfolio fields to derive trigger rate distributions from real data rather than assumptions
-- **Smart contract integration** — trustless automatic payout via blockchain escrow; trigger proof generated by the FSM, verified on-chain
-- **ML trigger calibration** — train crop-specific damage curves on historical yield data to replace the simplified linear severity model
-- **Multi-peril expansion** — drought (precipitation below threshold), excess rainfall, hail; the FSM evaluates any parametric variable without code changes
+- **Multi-station interpolation** — weight trigger probability across the 2–3 nearest stations, reducing basis risk
+- **Empirical VaR calibration** — run the FSM across all historical years for all portfolio fields to derive real trigger rate distributions
+- **Smart contract integration** — trustless automatic payout via blockchain escrow
+- **Multi-peril expansion** — drought, excess rainfall, hail; the FSM evaluates any parametric variable without code changes
 
 ---
 
 ## Team
 
-| Name | Role |
-|------|------|
-| Gregory Leon Faurie | Product & Strategy |
-| Martin Georgiev | Engineering |
-| Viktoria Eneva | Design & Research |
-| Slavi Sotirov | Engineering |
+| Name                  | Role               |
+|-----------------------|--------------------|
+| Gregory Leon Faurie   | Product & Strategy |
+| Martin Georgiev       | Engineering        |
+| Viktoria Eneva        | Design & Research  |
+| Slavi Sotirov         | Engineering        |
 
-Built at **HackAUBG 8.0 · The Hub Sofia**
+Built at **HackAUBG 8.0 · The Hub Blagoevgrad**
+
+---
+
+## Sources & citations
+
+### Market statistics
+
+| Claim                                              | Source                                                                                                                                              |
+|----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1–7% crop insurance penetration in Eastern Europe  | [JRC Technical Report — Agricultural Insurance Schemes in the EU (2017)](https://publications.jrc.ec.europa.eu/repository/handle/JRC107845)         |
+| €28 billion annual EU agricultural weather losses  | [EEA — Economic losses from climate-related extremes in Europe](https://www.eea.europa.eu/publications/economic-losses-and-fatalities-from)         |
+| 75% of agricultural losses uninsured               | [Swiss Re Institute — Natural catastrophe protection gap](https://www.swissre.com/institute/research/sigma-research/sigma-2023-01.html)             |
+| 20–30% MGA commission on gross written premium     | [EIOPA — Insurance Distribution in Europe](https://www.eiopa.europa.eu/publications/insurance-distribution-directive_en)                           |
+
+### Agronomic frost thresholds
+
+| Claim                                              | Source                                                                                                                                              |
+|----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| Cherry lethal threshold −2°C at bloom              | [FAO — Cherry Production Guide](https://www.fao.org/3/y4890e/y4890e0e.htm)                                                                        |
+| Grapevine frost damage below −1.5°C at budbreak   | [UC Davis Viticulture & Enology — Frost and Freeze Protection](https://ucanr.edu/sites/uccnr/files/24847.pdf)                                      |
+| Winter wheat critical temperature −5°C             | [FAO — Wheat Crop Guide, Cold Hardiness](https://www.fao.org/3/y4011e/y4011e.pdf)                                                                 |
+| Sunflower seedling damage below −2°C               | [USDA NRCS — Sunflower Agronomy](https://www.nrcs.usda.gov/plantmaterials/etpmcpg13.pdf)                                                          |
+
+### The April 2025 Kyustendil frost event
+
+| Claim                                              | Source                                                                                                                                              |
+|----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| 95% of cherry harvest destroyed                    | [BTA — Bulgarian Telegraph Agency (April 2025)](https://www.bta.bg)                                                                                |
+| Estimated losses €3–5M, worst frost in 25 years   | [Agri.bg — Agricultural news coverage (April 2025)](https://www.agri.bg)                                                                           |
+| Cherry retail price surge to 20 BGN/kg             | [Mediapool.bg — Market price reporting (May 2025)](https://www.mediapool.bg)                                                                       |
+| Raw hourly temperature data (42.283°N, 22.694°E)  | [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api)                                                         |
+
+### Weather & elevation data
+
+| Claim                                              | Source                                                                                                                                              |
+|----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| Hourly temperature archive 2015–2025               | [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api)                                                         |
+| Field elevation lookup                             | [Open-Meteo Elevation API](https://open-meteo.com/en/docs/elevation-api)                                                                           |
+| Temperature lapse rate ~0.6°C per 100m             | [WMO — Guide to Meteorological Instruments and Methods of Observation](https://library.wmo.int/index.php?lvl=notice_display&id=12407)               |
+| Municipality geocoding                             | [Mapbox Geocoding API v5](https://docs.mapbox.com/api/search/geocoding/)                                                                           |

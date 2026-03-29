@@ -1,5 +1,6 @@
 import type { MockField, CropKey } from "@/types";
 import { assignStationZone } from "./basisRisk";
+import farmlandCoords from "./farmlandCoords.json";
 
 // Seeded pseudo-random for deterministic demo data
 function seededRandom(seed: number) {
@@ -12,11 +13,12 @@ function seededRandom(seed: number) {
 
 const crops: CropKey[] = ["cherries", "grapes", "wheat", "sunflower"];
 
+// Match contracts.ts payoutPerHectare values
 const payoutAmounts: Record<CropKey, number> = {
-  cherries: 340,
-  grapes: 280,
-  wheat: 180,
-  sunflower: 220,
+  cherries: 750,
+  grapes: 500,
+  wheat: 470,
+  sunflower: 280,
 };
 
 /**
@@ -39,22 +41,18 @@ export function generateMockFields(
   // Effective rates: real historical data if available, conservative fallback otherwise
   const rates: Record<CropKey, number> = triggerRates ?? {
     cherries: 0.36,
-    grapes: 0.27,
-    wheat: 0.18,
+    grapes: 0.30,
+    wheat: 0.27,
     sunflower: 0.27,
   };
 
   const fields: MockField[] = [];
 
-  // Kyustendil bounding box
-  const minLat = 42.2;
-  const maxLat = 42.4;
-  const minLng = 22.5;
-  const maxLng = 22.8;
-
-  for (let i = 0; i < 207; i++) {
-    const lat = minLat + rand() * (maxLat - minLat);
-    const lng = minLng + rand() * (maxLng - minLng);
+  for (let i = 0; i < 127; i++) {
+    // Pick a real OSM farmland centroid, with small jitter so nearby fields don't stack
+    const base = farmlandCoords[Math.floor(rand() * farmlandCoords.length)] as [number, number];
+    const lat = base[0] + (rand() - 0.5) * 0.02;
+    const lng = base[1] + (rand() - 0.5) * 0.02;
     const crop = crops[Math.floor(rand() * crops.length)];
     const hectares = +(1 + rand() * 12).toFixed(1);
     const covered = rand() > 0.12; // ~88% coverage rate
@@ -84,11 +82,12 @@ export function generateMockFields(
 export function computeFieldStats(fields: MockField[]) {
   const insured = fields.filter((f) => f.covered);
   const totalHa = insured.reduce((sum, f) => sum + f.hectares, 0);
+  // Use real contract premium rates so loss ratio is meaningful
   const premiums: Record<CropKey, number> = {
-    cherries: 15,
-    grapes: 12,
-    wheat: 8,
-    sunflower: 10,
+    cherries: 68,
+    grapes: 45,
+    wheat: 42,
+    sunflower: 25,
   };
   const totalPremiums = insured.reduce(
     (sum, f) => sum + f.hectares * premiums[f.crop],

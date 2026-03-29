@@ -9,6 +9,7 @@ interface PayoutNotificationProps {
   contract: ParametricContract;
   minTemp: number;
   breachHours: number;
+  locationLabel?: string;
 }
 
 function useCountUp(target: number, duration: number = 800, delay: number = 0) {
@@ -33,6 +34,7 @@ export default function PayoutNotification({
   contract,
   minTemp,
   breachHours,
+  locationLabel = "Kyustendil, BG",
 }: PayoutNotificationProps) {
   const animatedAmount = useCountUp(contract.payoutPerHectare, 1000, 500);
   const [revealed, setRevealed] = useState(0); // 0-4 reveal stages
@@ -108,7 +110,7 @@ export default function PayoutNotification({
               <ReceiptRow icon={<FileText className="w-3 h-3" />} label="Contract" value={contract.crop} />
               <ReceiptRow icon={<Thermometer className="w-3 h-3" />} label="Min. temperature" value={`${minTemp.toFixed(1)}°C`} highlight />
               <ReceiptRow icon={<Clock className="w-3 h-3" />} label="Duration below threshold" value={`${breachHours}h (req: ${contract.durationThreshold}h)`} />
-              <ReceiptRow icon={<MapPin className="w-3 h-3" />} label="Region" value="Kyustendil, BG" />
+              <ReceiptRow icon={<MapPin className="w-3 h-3" />} label="Region" value={locationLabel} />
             </motion.div>
           )}
 

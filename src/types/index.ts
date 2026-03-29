@@ -154,6 +154,27 @@ export interface WeatherStation {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Portfolio history                                                  */
+/* ------------------------------------------------------------------ */
+
+export interface PortfolioCropYear {
+  key: CropKey;
+  icon: string;
+  triggered: boolean;
+  hectares: number;
+  potentialPayout: number; // hectares × payoutPerHectare if triggered
+  minTemp: number;
+  durationHours: number;
+}
+
+export interface PortfolioYearData {
+  year: number;
+  crops: PortfolioCropYear[];
+  totalPayout: number;
+  anyTriggered: boolean;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Statistics                                                         */
 /* ------------------------------------------------------------------ */
 
@@ -179,6 +200,20 @@ export interface PortfolioRisk {
   valueAtRisk95: number;
   diversificationBenefit: number;
   correlationZones: number;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Policy selection (coverage wizard output)                         */
+/* ------------------------------------------------------------------ */
+
+export interface PolicySelection {
+  cropKey: CropKey;
+  tierIndex: number;        // -1 = no coverage chosen
+  tierName: string;
+  hectares: number;
+  /** Premium per hectare already adjusted for loading factor */
+  annualPremiumPerHectare: number;
+  totalAnnualPremium: number;
 }
 
 /* ------------------------------------------------------------------ */
