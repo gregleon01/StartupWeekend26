@@ -17,7 +17,7 @@ Built at **HackAUBG 8.0 · The Hub Blagoevgrad**
 
 A farmer opens the app, pins their field on a satellite map, selects their crop, and receives an instant parametric guarantee:
 
-> *"If temperature drops below −2°C for 4+ consecutive hours during bloom (Apr 1–May 15), you receive €750/ha — automatically, no claim filed."*
+> *"If temperature drops below −2.2°C for 2+ consecutive hours during bloom (Apr 1–May 15), you receive €750/ha — automatically, no claim filed."*
 
 The platform pulls 10 years of real hourly temperature data for that exact field, shows which years would have triggered a payout, and demonstrates a live frost simulation with automatic payout notification. The insurer dashboard shows 127 fields across Bulgaria with portfolio-level risk analytics and a real-time frost event simulation.
 
@@ -202,10 +202,10 @@ interface ParametricContract {
 
 | Crop       | Window          | Threshold | Duration | Payout/ha | Premium/ha |
 |------------|-----------------|-----------|----------|-----------|------------|
-| Cherries   | Apr 1–May 15    | −2°C      | 4h       | €750      | €68        |
-| Grapes     | Apr 10–May 20   | −1.5°C    | 3h       | €500      | €45        |
-| Wheat      | Mar 15–Apr 30   | −5°C      | 6h       | €470      | €42        |
-| Sunflower  | Apr 15–May 31   | −2°C      | 4h       | €280      | €25        |
+| Cherries   | Apr 1–May 15    | −2.2°C    | 2h       | €750      | €68        |
+| Grapes     | Apr 10–May 20   | −2.2°C    | 2h       | €500      | €45        |
+| Wheat      | Mar 15–Apr 30   | −4°C      | 2h       | €470      | €42        |
+| Sunflower  | Apr 15–May 31   | −2.2°C    | 2h       | €280      | €25        |
 
 ---
 
@@ -252,11 +252,11 @@ The nearest station is found via Haversine distance across a network of 20 Bulga
 The frost simulation in the farmer app replays **actual weather data** from the April 7–8, 2025 frost that destroyed 95% of cherry crops in the Kyustendil region.
 
 ```
-Apr 8  00:00  −2.1°C   ← crosses cherry lethal threshold (−2°C)
-Apr 8  01:00  −2.2°C
+Apr 8  00:00  −2.1°C   ← crosses cherry lethal threshold (−2.2°C)
+Apr 8  01:00  −2.2°C   ← TRIGGER FIRES (2nd consecutive hour below −2.2°C)
 Apr 8  02:00  −2.5°C
 Apr 8  03:00  −2.4°C
-Apr 8  04:00  −2.6°C   ← TRIGGER FIRES (4th consecutive hour below −2°C)
+Apr 8  04:00  −2.6°C
 Apr 8  06:00  −3.1°C   ← minimum temperature
 Apr 8  07:00  −1.4°C   ← sunrise recovery
 ```
@@ -346,10 +346,10 @@ Built at **HackAUBG 8.0 · The Hub Blagoevgrad**
 
 | Claim                                              | Source                                                                                                                                              |
 |----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| Cherry lethal threshold −2°C at bloom              | [FAO — Cherry Production Guide](https://www.fao.org/3/y4890e/y4890e0e.htm)                                                                        |
-| Grapevine frost damage below −1.5°C at budbreak   | [UC Davis Viticulture & Enology — Frost and Freeze Protection](https://ucanr.edu/sites/uccnr/files/24847.pdf)                                      |
-| Winter wheat critical temperature −5°C             | [FAO — Wheat Crop Guide, Cold Hardiness](https://www.fao.org/3/y4011e/y4011e.pdf)                                                                 |
-| Sunflower seedling damage below −2°C               | [USDA NRCS — Sunflower Agronomy](https://www.nrcs.usda.gov/plantmaterials/etpmcpg13.pdf)                                                          |
+| Cherry lethal threshold −2.2°C at bloom (Penn State Ext.)        | [Penn State Extension — Cherry Frost Protection](https://extension.psu.edu/fruit/treefruit/frost-protection)                                       |
+| Grapevine frost damage below −2.2°C at budbreak (MSU Ext.)      | [MSU Extension — Spring Frost and Grapes](https://www.canr.msu.edu/grapes/uploads/files/Frost%20Risk.pdf)                                         |
+| Winter wheat critical temperature −4°C at jointing (K-State)    | [K-State Research & Extension — Wheat Frost Injury](https://www.ksre.k-state.edu/research/publications/c646.pdf)                                  |
+| Sunflower seedling damage below −2.2°C at V4 (UNL CropWatch)    | [UNL CropWatch — Sunflower Cold Injury](https://cropwatch.unl.edu/sunflower/insects-weeds-diseases)                                               |
 
 ### The April 2025 Kyustendil frost event
 

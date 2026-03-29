@@ -391,7 +391,7 @@ export default function AdminPage() {
                 {/* Crop exposure bars */}
                 <div>
                   <p className="text-white/30 text-[9px] uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <Layers className="w-3 h-3" /> Crop Exposure
+                    <Layers className="w-3 h-3" /> Triggered Claims by Crop
                   </p>
                   {crops.map((d, i) => (
                     <div key={d.crop} className="mb-3">
@@ -590,7 +590,7 @@ export default function AdminPage() {
                     <ThermometerSnowflake className="w-3 h-3" /> Season Forecast
                   </p>
                   <div className="space-y-2">
-                    <BigMetric label="Next Season Est." value={`€${portfolio.expectedAnnualPayout.toLocaleString()}`} color="text-accent-amber" />
+                    <BigMetric label="Next Season Est." value={`€${Math.round(portfolio.expectedAnnualPayout * 1.15).toLocaleString()}`} color="text-accent-amber" />
                     <BigMetric label="5-Year Average" value={`€${avg5.toLocaleString()}`} color="text-white" />
                     <BigMetric label="Worst Case (VaR 95%)" value={`€${portfolio.valueAtRisk95.toLocaleString()}`} color="text-danger-red" />
                   </div>
