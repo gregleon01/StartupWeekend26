@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useState, useRef, useCallback } from "react";
+import React, { useMemo, useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield, TrendingUp, MapPin, AlertTriangle, Banknote, BarChart3,
@@ -490,10 +490,10 @@ export default function AdminPage() {
                   <div className="overflow-x-auto">
                     <div className="grid gap-px min-w-0" style={{ gridTemplateColumns: `56px repeat(12, 1fr)` }}>
                       <div />
-                      {MO.map(m => <div key={m} className="text-center text-white/20 text-[7px] font-mono py-0.5">{m}</div>)}
+                      {MO.map((m, mi) => <div key={mi} className="text-center text-white/20 text-[7px] font-mono py-0.5">{m}</div>)}
                       {(["cherries","grapes","wheat","sunflower"] as CropKey[]).map(crop => (
-                        <>
-                          <div key={crop} className="flex items-center text-white/40 text-[9px] pr-1 truncate">
+                        <React.Fragment key={crop}>
+                          <div className="flex items-center text-white/40 text-[9px] pr-1 truncate">
                             {contracts[crop]?.icon}
                           </div>
                           {MW[crop].map((w, mi) => (
@@ -504,7 +504,7 @@ export default function AdminPage() {
                               transition={{ delay: .1 + mi*.02 }}
                             />
                           ))}
-                        </>
+                        </React.Fragment>
                       ))}
                     </div>
                   </div>
