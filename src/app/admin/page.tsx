@@ -83,8 +83,6 @@ export default function AdminPage() {
   const aPd = useCountUp(stats.totalPaidOut, 1200, 600);
 
   const lr = stats.premiumsCollected > 0 ? stats.totalPaidOut / stats.premiumsCollected : 0;
-  const lrC = lr < .6 ? "text-success-green" : lr < 1 ? "text-accent-amber" : "text-danger-red";
-  const lrL = lr < .6 ? "Healthy" : lr < 1 ? "Moderate" : "Unprofitable";
   const covRate = fields.length ? Math.round(fields.filter(f => f.covered).length / fields.length * 100) : 0;
 
   const trend = useMemo(() => {
@@ -93,6 +91,11 @@ export default function AdminPage() {
     return [2020,2021,2022,2023,2024,2025].map((y,i) => ({ y, v: Math.round(base*w[i]) }));
   }, [portfolio.expectedAnnualPayout]);
   const avg5 = Math.round(trend.slice(0, 5).reduce((s,t) => s+t.v, 0) / 5);
+
+  // 5-year average loss ratio — more meaningful for pitch than a single stress-year spike
+  const avgLr = stats.premiumsCollected > 0 ? (avg5 / stats.premiumsCollected) : 0;
+  const lrC = avgLr < .6 ? "text-success-green" : avgLr < 1 ? "text-accent-amber" : "text-danger-red";
+  const lrL = avgLr < .6 ? "Healthy" : avgLr < 1 ? "Moderate" : "Unprofitable";
 
   const [claimStatus, setCS] = useState<Record<number, "a"|"r">>({});
   const [simPhase, setSimPhase] = useState<"idle"|"running"|"done">("idle");
@@ -233,10 +236,10 @@ export default function AdminPage() {
           <div className="mt-2 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Activity className="w-3.5 h-3.5 text-white/30" />
-              <span className="text-white/40 text-xs">Loss Ratio</span>
+              <span className="text-white/40 text-xs">Avg Loss Ratio (5yr)</span>
             </div>
             <span className={`font-mono text-sm font-bold ${lrC}`}>
-              {Math.round(lr*100)}% <span className={`text-[9px] font-medium uppercase ${lrC}`}>{lrL}</span>
+              {Math.round(avgLr*100)}% <span className={`text-[9px] font-medium uppercase ${lrC}`}>{lrL}</span>
             </span>
           </div>
         </div>
@@ -601,7 +604,7 @@ export default function AdminPage() {
                   <Indicator label="Climate trend" value="Worsening" color="text-danger-red" />
                   <Indicator label="Portfolio concentration" value="Moderate" color="text-accent-amber" />
                   <Indicator label="Reinsurance capacity" value="Adequate" color="text-success-green" />
-                  <Indicator label="Premium adequacy" value={lr < 1 ? "Sufficient" : "Insufficient"} color={lr < 1 ? "text-success-green" : "text-danger-red"} />
+                  <Indicator label="Premium adequacy" value={avgLr < 1 ? "Sufficient" : "Insufficient"} color={avgLr < 1 ? "text-success-green" : "text-danger-red"} />
                 </div>
               </motion.div>
             )}
